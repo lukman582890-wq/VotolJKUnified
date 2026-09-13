@@ -14,5 +14,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".LocationPickerActivity" android:screenOrientation="portrait" />
-    </application>
+        <activity android:name=".BmsDetailActivity" />
+</application>
 </manifest>
