@@ -175,7 +175,7 @@
                 android:layout_height="wrap_content"/>
 
             <View
-                android:layout_width="85%"
+                android:layout_width="match_parent"
                 android:layout_height="4dp"
                 android:layout_marginTop="25dp"
                 android:background="#12343C"/>
