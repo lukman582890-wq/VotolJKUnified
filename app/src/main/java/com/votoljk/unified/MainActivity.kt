@@ -132,7 +132,7 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
 
         findViewById<Button>(R.id.startTrip).setOnClickListener { startRealTrip() }
         findViewById<Button>(R.id.endTrip).setOnClickListener { stopRealTrip() }
-        findViewById<Button>(R.id.exportLog).setOnClickListener { exportSystemLog() }
+        findViewById<Button>(com.votoljk.unified.R.id.exportLog).setOnClickListener { exportSystemLog() }
         findViewById<EditText>(R.id.tripOrigin).apply {
             isFocusable = false
             isClickable = true
