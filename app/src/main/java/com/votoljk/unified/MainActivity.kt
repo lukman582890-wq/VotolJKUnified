@@ -8,8 +8,6 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.*
 import android.content.pm.PackageManager
-import android.Manifest
-import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -18,8 +16,6 @@ import android.os.Looper
 import android.widget.EditText
 import android.widget.Button
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.widget.*
 import java.io.InputStream
 import java.io.OutputStream
