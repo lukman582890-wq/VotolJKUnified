@@ -8,6 +8,15 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.*
 import android.content.pm.PackageManager
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.os.Handler
+import android.os.Looper
+import android.widget.EditText
+import android.widget.Button
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -34,7 +43,98 @@ class MainActivity : Activity() {
             }
         }
     }
-    override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.activity_main)
+    
+
+private lateinit var locationManager: LocationManager
+private var tripRunning = false
+private var lastTripLocation: Location? = null
+private var tripDistanceKm = 0.0
+private var tripStartTime = 0L
+private val tripHandler = Handler(Looper.getMainLooper())
+
+private val tripLocationListener = object : LocationListener {
+    override fun onLocationChanged(location: Location) {
+        if (!tripRunning) return
+
+        lastTripLocation?.let {
+            val delta = it.distanceTo(location)
+            if (delta > 2f) tripDistanceKm += delta / 1000.0
+        }
+        lastTripLocation = location
+
+        findViewById<android.widget.TextView>(R.id.speedValue).text =
+            String.format("%.0f", location.speed * 3.6f)
+
+        findViewById<android.widget.TextView>(R.id.tripDistance).text =
+            String.format("Jarak     %.2f km", tripDistanceKm)
+
+        findViewById<android.widget.TextView>(R.id.tripTime).text =
+            "Waktu     " + formatTripTime(System.currentTimeMillis() - tripStartTime)
+    }
+}
+
+private val tripTimer = object : Runnable {
+    override fun run() {
+        if (tripRunning) {
+            findViewById<android.widget.TextView>(R.id.tripTime).text =
+                "Waktu     " + formatTripTime(System.currentTimeMillis() - tripStartTime)
+            tripHandler.postDelayed(this, 1000)
+        }
+    }
+}
+
+private fun formatTripTime(ms: Long): String {
+    val total = ms / 1000
+    return String.format("%02d:%02d:%02d", total / 3600, (total % 3600) / 60, total % 60)
+}
+
+private fun startRealTrip() {
+    if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        requestPermissions(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ), 9001
+        )
+        return
+    }
+
+    tripRunning = true
+    tripDistanceKm = 0.0
+    lastTripLocation = null
+    tripStartTime = System.currentTimeMillis()
+
+    findViewById<android.widget.TextView>(R.id.tripDistance).text = "Jarak     0.00 km"
+    findViewById<android.widget.TextView>(R.id.tripTime).text = "Waktu     00:00:00"
+
+    locationManager.requestLocationUpdates(
+        LocationManager.GPS_PROVIDER,
+        1000L,
+        1f,
+        tripLocationListener
+    )
+    tripHandler.post(tripTimer)
+}
+
+private fun stopRealTrip() {
+    tripRunning = false
+    if (::locationManager.isInitialized) {
+        locationManager.removeUpdates(tripLocationListener)
+    }
+    tripHandler.removeCallbacks(tripTimer)
+
+    findViewById<android.widget.TextView>(R.id.tripDistance).text =
+        String.format("Jarak     %.2f km", tripDistanceKm)
+}
+
+override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.activity_main)
+
+        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+
+        findViewById<Button>(R.id.startTrip).setOnClickListener { startRealTrip() }
+        findViewById<Button>(R.id.endTrip).setOnClickListener { stopRealTrip() }
+
         adapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
         votolStatus=findViewById(R.id.votolStatus); jkStatus=findViewById(R.id.jkStatus); votolDevices=findViewById(R.id.votolDevices); jkDevices=findViewById(R.id.jkDevices); log=findViewById(R.id.log)
         findViewById<Button>(R.id.votolScan).setOnClickListener { scanClassic() }; findViewById<Button>(R.id.votolDisconnect).setOnClickListener { disconnectVotol() }
