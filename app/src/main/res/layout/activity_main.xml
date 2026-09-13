@@ -1,24 +1,456 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:background="#070B0E" android:fillViewport="true" android:layout_width="match_parent" android:layout_height="match_parent">
-<LinearLayout android:orientation="vertical" android:padding="20dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-<TextView android:text="VOTOL JK UNIFIED" android:textColor="#FFFFFF" android:textSize="24sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-<TextView android:text="EV SERVICE TOOL  •  ANDROID" android:textColor="#7F8B93" android:textSize="12sp" android:layout_marginTop="4dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-<View android:background="#263139" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="1dp"/>
-<TextView android:text="VOTOL  /  BLUETOOTH CLASSIC • SPP" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-<TextView android:id="@+id/votolStatus" android:text="DISCONNECTED" android:textColor="#FFB86B" android:layout_marginTop="6dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-<LinearLayout android:orientation="horizontal" android:layout_marginTop="10dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-<Button android:id="@+id/votolScan" android:text="SCAN CLASSIC" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-<Button android:id="@+id/votolDisconnect" android:text="DISCONNECT" android:layout_marginStart="8dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-</LinearLayout>
-<TextView android:id="@+id/votolDevices" android:text="No devices scanned." android:textColor="#B8C1C7" android:paddingTop="10dp" android:paddingBottom="10dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<View android:background="#263139" android:layout_width="match_parent" android:layout_height="1dp"/>
-<TextView android:text="JK BMS  /  BLUETOOTH LE" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-<TextView android:id="@+id/jkStatus" android:text="DISCONNECTED" android:textColor="#FFB86B" android:layout_marginTop="6dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-<LinearLayout android:orientation="horizontal" android:layout_marginTop="10dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-<Button android:id="@+id/jkScan" android:text="SCAN BLE" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-<Button android:id="@+id/jkDisconnect" android:text="DISCONNECT" android:layout_marginStart="8dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-</LinearLayout>
-<TextView android:id="@+id/jkDevices" android:text="No BLE devices scanned." android:textColor="#B8C1C7" android:paddingTop="10dp" android:paddingBottom="10dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<View android:background="#263139" android:layout_width="match_parent" android:layout_height="1dp"/>
-<TextView android:text="LINK DIAGNOSTICS" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-<TextView android:id="@+id/log" android:text="Ready. Protocol decoders are intentionally not faked." android:textColor="#7F8B93" android:textSize="12sp" android:layout_marginTop="8dp" android:fontFamily="monospace" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-</LinearLayout></ScrollView>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#070B0F"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VOTOL JK UNIFIED"
+            android:textColor="#FFFFFF"
+            android:textSize="25sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="EV SERVICE TOOL  •  VOTOL CONTROLLER  •  JK BMS"
+            android:textColor="#718096"
+            android:textSize="11sp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#101620"
+                android:gravity="center_vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:text="●"
+                    android:textColor="#FF3B70"
+                    android:textSize="24sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:text="VOTOL CONTROLLER"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:id="@+id/votolStatus"
+                        android:text="DISCONNECTED"
+                        android:textColor="#FFB86B"
+                        android:textSize="11sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#101620"
+                android:gravity="center_vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:text="●"
+                    android:textColor="#00F58C"
+                    android:textSize="24sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:text="JK BMS"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:id="@+id/jkStatus"
+                        android:text="DISCONNECTED"
+                        android:textColor="#FFB86B"
+                        android:textSize="11sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginTop="14dp"
+            android:background="#0D141D"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:text="SPORT"
+                    android:textColor="#00E8FF"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:background="#102A32"
+                    android:padding="10dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"/>
+
+                <TextView
+                    android:text="READY"
+                    android:textColor="#00F58C"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:background="#102A25"
+                    android:padding="10dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/speedValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="00"
+                android:textColor="#00E8FF"
+                android:textSize="82sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"/>
+
+            <TextView
+                android:text="K M / H"
+                android:textColor="#8795AA"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <View
+                android:layout_width="85%"
+                android:layout_height="4dp"
+                android:layout_marginTop="25dp"
+                android:background="#12343C"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="#101620"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:text="BATTERY SYSTEM (JK BMS)"
+                android:textColor="#91A4C5"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="10dp"
+                android:background="#202B39"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:text="SOC"
+                        android:textColor="#91A4C5"
+                        android:textSize="13sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:text="-- %"
+                        android:textColor="#00F58C"
+                        android:textSize="31sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:layout_marginTop="5dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="right"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:text="TOTAL VOLTAGE"
+                        android:textColor="#91A4C5"
+                        android:textSize="13sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:text="--.-- V"
+                        android:textColor="#00E8FF"
+                        android:textSize="27sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:layout_marginTop="5dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:text="CURRENT\n0.0 A"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:text="POWER\n0 W"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:text="DELTA CELL\n0.000 V"
+                    android:textColor="#00F58C"
+                    android:textSize="13sp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:text="BMS TEMP\n-- °C"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="180dp"
+                android:layout_weight="1"
+                android:background="#101620"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:text="VOTOL TELEMETRY"
+                    android:textColor="#91A4C5"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:text="Motor RPM\n0\n\nPhase Current\n0.0 A\n\nThrottle\n0 %"
+                    android:textColor="#DCE5F2"
+                    android:textSize="13sp"
+                    android:layout_marginTop="14dp"
+                    android:fontFamily="monospace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="180dp"
+                android:layout_weight="1"
+                android:background="#101620"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:text="SYSTEM TEMP"
+                    android:textColor="#91A4C5"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:text="Controller     -- °C\n\nMotor              -- °C\n\nBattery            -- °C"
+                    android:textColor="#DCE5F2"
+                    android:textSize="13sp"
+                    android:layout_marginTop="14dp"
+                    android:fontFamily="monospace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="#101620"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:text="SYSTEM LOG / STATUS"
+                android:textColor="#91A4C5"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:id="@+id/log"
+                android:text="Ready. VOTOL SPP + JK BMS BLE."
+                android:textColor="#56A8FF"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:layout_marginTop="12dp"
+                android:background="#080D13"
+                android:padding="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/votolScan"
+                android:text="SCAN VOTOL"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/votolDisconnect"
+                android:text="DISCONNECT"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/votolDevices"
+            android:text="No VOTOL devices scanned."
+            android:textColor="#718096"
+            android:textSize="11sp"
+            android:padding="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/jkScan"
+                android:text="SCAN JK BMS"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/jkDisconnect"
+                android:text="DISCONNECT"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/jkDevices"
+            android:text="No JK BMS devices scanned."
+            android:textColor="#718096"
+            android:textSize="11sp"
+            android:padding="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+</ScrollView>
