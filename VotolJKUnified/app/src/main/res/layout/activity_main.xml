@@ -1,0 +1,24 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:background="#070B0E" android:fillViewport="true" android:layout_width="match_parent" android:layout_height="match_parent">
+<LinearLayout android:orientation="vertical" android:padding="20dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+<TextView android:text="VOTOL JK UNIFIED" android:textColor="#FFFFFF" android:textSize="24sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<TextView android:text="EV SERVICE TOOL  •  ANDROID" android:textColor="#7F8B93" android:textSize="12sp" android:layout_marginTop="4dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<View android:background="#263139" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="1dp"/>
+<TextView android:text="VOTOL  /  BLUETOOTH CLASSIC • SPP" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/votolStatus" android:text="DISCONNECTED" android:textColor="#FFB86B" android:layout_marginTop="6dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<LinearLayout android:orientation="horizontal" android:layout_marginTop="10dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+<Button android:id="@+id/votolScan" android:text="SCAN CLASSIC" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+<Button android:id="@+id/votolDisconnect" android:text="DISCONNECT" android:layout_marginStart="8dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+</LinearLayout>
+<TextView android:id="@+id/votolDevices" android:text="No devices scanned." android:textColor="#B8C1C7" android:paddingTop="10dp" android:paddingBottom="10dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<View android:background="#263139" android:layout_width="match_parent" android:layout_height="1dp"/>
+<TextView android:text="JK BMS  /  BLUETOOTH LE" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/jkStatus" android:text="DISCONNECTED" android:textColor="#FFB86B" android:layout_marginTop="6dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<LinearLayout android:orientation="horizontal" android:layout_marginTop="10dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+<Button android:id="@+id/jkScan" android:text="SCAN BLE" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+<Button android:id="@+id/jkDisconnect" android:text="DISCONNECT" android:layout_marginStart="8dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+</LinearLayout>
+<TextView android:id="@+id/jkDevices" android:text="No BLE devices scanned." android:textColor="#B8C1C7" android:paddingTop="10dp" android:paddingBottom="10dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<View android:background="#263139" android:layout_width="match_parent" android:layout_height="1dp"/>
+<TextView android:text="LINK DIAGNOSTICS" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/log" android:text="Ready. Protocol decoders are intentionally not faked." android:textColor="#7F8B93" android:textSize="12sp" android:layout_marginTop="8dp" android:fontFamily="monospace" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+</LinearLayout></ScrollView>
