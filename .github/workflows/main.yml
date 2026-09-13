@@ -23,13 +23,17 @@ jobs:
       - name: Install Android SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Extract project
-        run: unzip -q VotolJKUnified-0.1.0.zip -d build-src
+      - name: Find and extract project
+        run: |
+          ZIP=$(find . -maxdepth 2 -type f -name "*.zip" | head -1)
+          echo "Found ZIP: $ZIP"
+          unzip -q "$ZIP" -d build-src
+          find build-src -maxdepth 2 -type f | head -30
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.7'
+          gradle-version: '8.9'
 
       - name: Build APK
         working-directory: build-src/VotolJKUnified
