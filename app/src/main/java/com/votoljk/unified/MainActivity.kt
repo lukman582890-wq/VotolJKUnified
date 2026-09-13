@@ -163,73 +163,25 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
     private fun scanBle(){ if(!adapter.isEnabled){startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));return}; ble.clear(); scanner=adapter.bluetoothLeScanner; scanner?.startScan(bleCallback); jkStatus.text="SCANNING…"; log.text="BLE scan active. Tap a JK BMS device to connect."; handler.postDelayed({scanner?.stopScan(bleCallback);if(jkStatus.text=="SCANNING…")jkStatus.text="SELECT DEVICE"},10000);renderBle() }
     private fun renderBle(){ val rows=ble.values.map{d->"${d.name ?: "Unnamed BLE device"}\n${d.address}"};jkDevices.text=if(rows.isEmpty())"Scanning…" else rows.joinToString("\n\n");jkDevices.setOnClickListener{ble.values.firstOrNull()?.let{connectJk(it)}} }
     private fun connectJk(d:BluetoothDevice){jkStatus.text="CONNECTING…";log.text="JK BMS BLE connecting to ${d.name ?: d.address}";jkGatt=d.connectGatt(this,false,gattCallback)}
-    private val gattCallback=object:BluetoothGattCallback(){override fun onConnectionStateChange(g:BluetoothGatt,s:Int,n:Int){runOnUiThread{if(n==BluetoothProfile.STATE_CONNECTED){jkStatus.text="CONNECTED";jkStatus.setTextColor(0xFF45D6A3.toInt());log.text="JK BMS BLE connected. Discovering services…";g.discoverServices()}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onServicesDiscovered(g: BluetoothGatt, s: Int) {
-    if (s != BluetoothGatt.GATT_SUCCESS) {
-        runOnUiThread { log.text = "JK BMS service discovery failed: $s" }
-        return
-    }
-
-    val lines = mutableListOf<String>()
-    var notifyCount = 0
-
-    for (service in g.services) {
+    private val gattCallback=object:BluetoothGattCallback(){override fun onConnectionStateChange(g:BluetoothGatt,s:Int,n:Int){runOnUiThread{if(n==BluetoothProfile.STATE_CONNECTED){jkStatus.text="CONNECTED";jkStatus.setTextColor(0xFF45D6A3.toInt());log.text="JK BMS BLE connected. Discovering services…";g.discoverServices()}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onServicesDiscovered(g:BluetoothGatt,s:Int){
+    val lines=mutableListOf<String>()
+    for(service in g.services){
         lines.add("SERVICE ${service.uuid}")
-        for (c in service.characteristics) {
-            val props = mutableListOf<String>()
-            if ((c.properties and BluetoothGattCharacteristic.PROPERTY_READ) != 0) props.add("READ")
-            if ((c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE) != 0) props.add("WRITE")
-            if ((c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0) props.add("WRITE_NR")
-            if ((c.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) props.add("NOTIFY")
-            if ((c.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0) props.add("INDICATE")
-            lines.add("  CHAR ${c.uuid} [" + props.joinToString(", ") + "]")
+        for(c in service.characteristics){
+            val p=mutableListOf<String>()
+            if((c.properties and BluetoothGattCharacteristic.PROPERTY_READ)!=0)p.add("READ")
+            if((c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE)!=0)p.add("WRITE")
+            if((c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)!=0)p.add("WRITE_NR")
+            if((c.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY)!=0)p.add("NOTIFY")
+            if((c.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE)!=0)p.add("INDICATE")
+            lines.add("  CHAR ${c.uuid} ["+p.joinToString(", ")+"]")
         }
     }
-
-    val ffe0 = g.getService(java.util.UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"))
-    val ffe1 = ffe0?.getCharacteristic(
-        java.util.UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
-    )
-
-    if (ffe1 != null &&
-        (ffe1.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
-
-        if (g.setCharacteristicNotification(ffe1, true)) {
-            val descriptor = ffe1.getDescriptor(
-                java.util.UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-            )
-
-            if (descriptor != null) {
-                descriptor.value = android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                g.writeDescriptor(descriptor)
-                notifyCount++
-            }
-        }
+    runOnUiThread{
+        log.text="JK BMS GATT\\n"+lines.joinToString("\\n")
     }
-
-    runOnUiThread {
-        log.text = "JK BMS GATT\n" +
-                lines.joinToString("\n") +
-                "\n\nFFE1 NOTIFY ENABLED = ${notifyCount > 0}"
-    }
-}
-
-@Suppress("DEPRECATION")
-override fun onCharacteristicChanged(
-    g: BluetoothGatt,
-    characteristic: BluetoothGattCharacteristic
-) {
-    val data = characteristic.value ?: return
-    if (data.isEmpty()) return
-
-    val hex = data.joinToString(" ") { "%02X".format(it.toInt() and 0xFF) }
-
-    runOnUiThread {
-        val old = log.text.toString()
-        log.text = old + "\nRX ${characteristic.uuid}:\n$hex"
-    }
-}
-
-private fun disconnectJk(){runCatching{jkGatt?.disconnect();jkGatt?.close()};jkGatt=null;jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}
+}}
+    private fun disconnectJk(){runCatching{jkGatt?.disconnect();jkGatt?.close()};jkGatt=null;jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}
 
     private fun launchLocationPicker(mode: String) {
         startActivityForResult(
