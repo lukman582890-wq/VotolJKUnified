@@ -7,6 +7,7 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.*
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
@@ -131,6 +132,7 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
 
         findViewById<Button>(R.id.startTrip).setOnClickListener { startRealTrip() }
         findViewById<Button>(R.id.endTrip).setOnClickListener { stopRealTrip() }
+        findViewById<Button>(R.id.exportLog).setOnClickListener { exportSystemLog() }
         findViewById<EditText>(R.id.tripOrigin).apply {
             isFocusable = false
             isClickable = true
@@ -205,6 +207,63 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
                 findViewById<EditText>(R.id.tripDestination).setText(label)
             }
         }
+    }
+
+
+    private fun exportSystemLog() {
+        val text = log.text.toString()
+
+        if (text.isBlank()) {
+            Toast.makeText(this, "SYSTEM LOG masih kosong", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val fileName = "VotolJKUnified_LOG_${System.currentTimeMillis()}.txt"
+
+        val uri = runCatching {
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(android.provider.MediaStore.Downloads.MIME_TYPE, "text/plain")
+                put(android.provider.MediaStore.Downloads.RELATIVE_PATH, "Download/VotolJKUnified")
+            }
+
+            contentResolver.insert(
+                android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                values
+            )
+        }.getOrNull()
+
+        if (uri == null) {
+            Toast.makeText(this, "Gagal membuat file log", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        runCatching {
+            contentResolver.openOutputStream(uri)?.use {
+                it.write(text.toByteArray(Charsets.UTF_8))
+            }
+        }.onFailure {
+            contentResolver.delete(uri, null, null)
+            Toast.makeText(this, "Gagal menyimpan log", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        Toast.makeText(
+            this,
+            "Log tersimpan di Download/VotolJKUnified",
+            Toast.LENGTH_LONG
+        ).show()
+
+        startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                },
+                "Bagikan SYSTEM LOG"
+            )
+        )
     }
 
     override fun onDestroy(){unregisterReceiver(receiver);disconnectVotol();disconnectJk();super.onDestroy()}
