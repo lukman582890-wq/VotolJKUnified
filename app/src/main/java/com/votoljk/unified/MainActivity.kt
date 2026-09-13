@@ -128,6 +128,8 @@ private fun stopRealTrip() {
 
 override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.activity_main)
 
+        findViewById<android.widget.Button>(R.id.exportLog).setOnClickListener { exportSystemLog() }
+
         locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
 
         findViewById<Button>(R.id.startTrip).setOnClickListener { startRealTrip() }
