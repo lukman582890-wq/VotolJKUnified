@@ -80,7 +80,7 @@ class BmsDetailActivity : AppCompatActivity() {
     }
 
     private fun title(text: String): TextView {
-        return TextView(this@BmsDetailActivity).apply {
+        return TextView(applicationContext).apply {
             this.text = text
             textSize = 24f
             setTextColor(cyan)
@@ -91,7 +91,7 @@ class BmsDetailActivity : AppCompatActivity() {
     }
 
     private fun subtitle(text: String): TextView {
-        return TextView(this@BmsDetailActivity).apply {
+        return TextView(applicationContext).apply {
             this.text = text
             textSize = 13f
             setTextColor(gray)
@@ -101,7 +101,7 @@ class BmsDetailActivity : AppCompatActivity() {
     }
 
     private fun section(text: String): TextView {
-        return TextView(this@BmsDetailActivity).apply {
+        return TextView(applicationContext).apply {
             this.text = text
             textSize = 15f
             setTextColor(cyan)
@@ -111,7 +111,7 @@ class BmsDetailActivity : AppCompatActivity() {
     }
 
     private fun row(label: String, value: String, valueColor: Int = white): TextView {
-        return TextView(this@BmsDetailActivity).apply {
+        return TextView(applicationContext).apply {
             this.text = "$label    $value"
             textSize = 15f
             setTextColor(valueColor)
