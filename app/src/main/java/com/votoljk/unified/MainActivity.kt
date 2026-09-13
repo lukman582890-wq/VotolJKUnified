@@ -16,6 +16,7 @@ import android.os.Looper
 import android.widget.EditText
 import android.widget.Button
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.widget.*
 import java.io.InputStream
 import java.io.OutputStream

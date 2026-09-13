@@ -463,7 +463,9 @@
                 android:background="#080D13"
                 android:padding="12dp"
                 android:layout_width="match_parent"
-                android:layout_height="100dp"/>
+                android:layout_height="100dp"
+        android:maxHeight="260dp"
+        android:scrollbars="vertical"/>
         </LinearLayout>
 
         <LinearLayout
