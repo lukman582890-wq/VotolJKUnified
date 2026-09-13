@@ -382,7 +382,7 @@
                 android:id="@+id/tripOrigin"
                 android:hint="Asal"
                 android:textColor="#FFFFFF"
-                android:hintTextColor="#718096"
+                android:textColorHint="#718096"
                 android:singleLine="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
@@ -391,7 +391,7 @@
                 android:id="@+id/tripDestination"
                 android:hint="Tujuan"
                 android:textColor="#FFFFFF"
-                android:hintTextColor="#718096"
+                android:textColorHint="#718096"
                 android:singleLine="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
