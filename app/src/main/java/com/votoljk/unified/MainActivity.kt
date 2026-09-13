@@ -130,6 +130,16 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
 
         findViewById<Button>(R.id.startTrip).setOnClickListener { startRealTrip() }
         findViewById<Button>(R.id.endTrip).setOnClickListener { stopRealTrip() }
+        findViewById<EditText>(R.id.tripOrigin).apply {
+            isFocusable = false
+            isClickable = true
+            setOnClickListener { launchLocationPicker("ORIGIN") }
+        }
+        findViewById<EditText>(R.id.tripDestination).apply {
+            isFocusable = false
+            isClickable = true
+            setOnClickListener { launchLocationPicker("DESTINATION") }
+        }
 
         adapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
         votolStatus=findViewById(R.id.votolStatus); jkStatus=findViewById(R.id.jkStatus); votolDevices=findViewById(R.id.votolDevices); jkDevices=findViewById(R.id.jkDevices); log=findViewById(R.id.log)
@@ -151,5 +161,33 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
     private fun connectJk(d:BluetoothDevice){jkStatus.text="CONNECTING…";log.text="JK BMS BLE connecting to ${d.name ?: d.address}";jkGatt=d.connectGatt(this,false,gattCallback)}
     private val gattCallback=object:BluetoothGattCallback(){override fun onConnectionStateChange(g:BluetoothGatt,s:Int,n:Int){runOnUiThread{if(n==BluetoothProfile.STATE_CONNECTED){jkStatus.text="CONNECTED";jkStatus.setTextColor(0xFF45D6A3.toInt());log.text="JK BMS BLE connected. Discovering services…";g.discoverServices()}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onServicesDiscovered(g:BluetoothGatt,s:Int){val count=g.services.sumOf{it.characteristics.size};runOnUiThread{log.text="JK BMS GATT ready: ${g.services.size} services / $count characteristics. Protocol UUIDs not assumed."}}}
     private fun disconnectJk(){runCatching{jkGatt?.disconnect();jkGatt?.close()};jkGatt=null;jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}
+
+    private fun launchLocationPicker(mode: String) {
+        startActivityForResult(
+            Intent(this, LocationPickerActivity::class.java).apply {
+                putExtra("MODE", mode)
+            },
+            700
+        )
+    }
+
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 700 && resultCode == RESULT_OK && data != null) {
+            val label = data.getStringExtra("LABEL") ?: return
+
+            if (data.getStringExtra("MODE") == "ORIGIN") {
+                findViewById<EditText>(R.id.tripOrigin).setText(label)
+            } else {
+                findViewById<EditText>(R.id.tripDestination).setText(label)
+            }
+        }
+    }
+
     override fun onDestroy(){unregisterReceiver(receiver);disconnectVotol();disconnectJk();super.onDestroy()}
 }
