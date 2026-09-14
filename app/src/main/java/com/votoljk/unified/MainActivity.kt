@@ -172,23 +172,33 @@ val hex=data.joinToString(" "){ "%02X".format(it.toInt() and 0xFF) }
 runOnUiThread{log.append("\\nJK RX [${c.uuid}] $hex\\n")}
 };
 override fun onServicesDiscovered(g:BluetoothGatt,s:Int){
-    val lines=mutableListOf<String>()
-    for(service in g.services){
-        lines.add("SERVICE ${service.uuid}")
-        for(c in service.characteristics){
-            val p=mutableListOf<String>()
-            if((c.properties and BluetoothGattCharacteristic.PROPERTY_READ)!=0)p.add("READ")
-            if((c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE)!=0)p.add("WRITE")
-            if((c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)!=0)p.add("WRITE_NR")
-            if((c.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY)!=0)p.add("NOTIFY")
-            if((c.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE)!=0)p.add("INDICATE")
-            lines.add("  CHAR ${c.uuid} ["+p.joinToString(", ")+"]")
+        val lines=mutableListOf<String>()
+        for(service in g.services){
+            lines.add("SERVICE ${service.uuid}")
+            for(c in service.characteristics){
+                val props=mutableListOf<String>()
+                if((c.properties and BluetoothGattCharacteristic.PROPERTY_READ)!=0) props.add("READ")
+                if((c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE)!=0) props.add("WRITE")
+                if((c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)!=0) props.add("WRITE_NR")
+                if((c.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY)!=0) props.add("NOTIFY")
+                if((c.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE)!=0) props.add("INDICATE")
+                lines.add("  CHAR ${c.uuid} [${props.joinToString(", ")}]")
+
+                if((c.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY)!=0){
+                    val enabled=g.setCharacteristicNotification(c,true)
+                    val cccd=c.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
+                    if(cccd!=null){
+                        cccd.value=BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        g.writeDescriptor(cccd)
+                    }
+                    lines.add("  >>> NOTIFY ${c.uuid}: $enabled")
+                }
+            }
         }
-    }
-    runOnUiThread{
-        log.text="JK BMS GATT\\n"+lines.joinToString("\\n")
-    }
-}}
+        runOnUiThread{
+            log.text="JK BMS GATT\\n"+lines.joinToString("\\n")
+        }
+    }}
     private fun disconnectJk(){runCatching{jkGatt?.disconnect();jkGatt?.close()};jkGatt=null;jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}
 
     private fun launchLocationPicker(mode: String) {
