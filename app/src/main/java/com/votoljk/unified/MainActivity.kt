@@ -166,7 +166,12 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
     private fun scanBle(){ if(!adapter.isEnabled){startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));return}; ble.clear(); scanner=adapter.bluetoothLeScanner; scanner?.startScan(bleCallback); jkStatus.text="SCANNING…"; log.text="BLE scan active. Tap a JK BMS device to connect."; handler.postDelayed({scanner?.stopScan(bleCallback);if(jkStatus.text=="SCANNING…")jkStatus.text="SELECT DEVICE"},10000);renderBle() }
     private fun renderBle(){ val rows=ble.values.map{d->"${d.name ?: "Unnamed BLE device"}\n${d.address}"};jkDevices.text=if(rows.isEmpty())"Scanning…" else rows.joinToString("\n\n");jkDevices.setOnClickListener{ble.values.firstOrNull()?.let{connectJk(it)}} }
     private fun connectJk(d:BluetoothDevice){jkStatus.text="CONNECTING…";log.text="JK BMS BLE connecting to ${d.name ?: d.address}";jkGatt=d.connectGatt(this,false,gattCallback)}
-    private val gattCallback=object:BluetoothGattCallback(){override fun onConnectionStateChange(g:BluetoothGatt,s:Int,n:Int){runOnUiThread{if(n==BluetoothProfile.STATE_CONNECTED){jkStatus.text="CONNECTED";jkStatus.setTextColor(0xFF45D6A3.toInt());log.text="JK BMS BLE connected. Discovering services…";g.discoverServices()}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onServicesDiscovered(g:BluetoothGatt,s:Int){
+    private val gattCallback=object:BluetoothGattCallback(){override fun onConnectionStateChange(g:BluetoothGatt,s:Int,n:Int){runOnUiThread{if(n==BluetoothProfile.STATE_CONNECTED){jkStatus.text="CONNECTED";jkStatus.setTextColor(0xFF45D6A3.toInt());log.text="JK BMS BLE connected. Discovering services…";g.discoverServices()}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onCharacteristicChanged(g:BluetoothGatt,c:BluetoothGattCharacteristic){
+val data=c.value ?: return
+val hex=data.joinToString(" "){ "%02X".format(it.toInt() and 0xFF) }
+runOnUiThread{log.append("\\nJK RX [${c.uuid}] $hex\\n")}
+};
+override fun onServicesDiscovered(g:BluetoothGatt,s:Int){
     val lines=mutableListOf<String>()
     for(service in g.services){
         lines.add("SERVICE ${service.uuid}")
