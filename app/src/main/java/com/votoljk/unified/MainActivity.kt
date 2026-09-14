@@ -180,6 +180,18 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
             lines.add("  CHAR ${c.uuid} ["+p.joinToString(", ")+"]")
         }
     }
+        val ffe0 = gatt.getService(java.util.UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"))
+        val ffe1 = ffe0?.getCharacteristic(java.util.UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb"))
+        if (ffe1 != null) {
+            gatt.setCharacteristicNotification(ffe1, true)
+            ffe1.getDescriptor(java.util.UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))?.let { d ->
+                d.value = android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                gatt.writeDescriptor(d)
+            }
+            runOnUiThread { log.append("
+JK BMS FFE1 NOTIFY ENABLED
+") }
+        }
     runOnUiThread{
         log.text="JK BMS GATT\\n"+lines.joinToString("\\n")
     }
