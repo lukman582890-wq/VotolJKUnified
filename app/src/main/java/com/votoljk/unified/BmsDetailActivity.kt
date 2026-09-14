@@ -6,9 +6,9 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import android.app.Activity
 
-class BmsDetailActivity : AppCompatActivity() {
+class BmsDetailActivity : Activity() {
 
     private val cyan = Color.rgb(0, 232, 255)
     private val green = Color.rgb(0, 245, 140)
@@ -80,7 +80,7 @@ class BmsDetailActivity : AppCompatActivity() {
     }
 
     private fun title(text: String): TextView {
-        return TextView(this@BmsDetailActivity as android.content.Context).apply {
+        return TextView(this@BmsDetailActivity).apply {
             this.text = text
             textSize = 24f
             setTextColor(cyan)
@@ -91,7 +91,7 @@ class BmsDetailActivity : AppCompatActivity() {
     }
 
     private fun subtitle(text: String): TextView {
-        return TextView(this@BmsDetailActivity as android.content.Context).apply {
+        return TextView(this@BmsDetailActivity).apply {
             this.text = text
             textSize = 13f
             setTextColor(gray)
@@ -101,7 +101,7 @@ class BmsDetailActivity : AppCompatActivity() {
     }
 
     private fun section(text: String): TextView {
-        return TextView(this@BmsDetailActivity as android.content.Context).apply {
+        return TextView(this@BmsDetailActivity).apply {
             this.text = text
             textSize = 15f
             setTextColor(cyan)
@@ -111,7 +111,7 @@ class BmsDetailActivity : AppCompatActivity() {
     }
 
     private fun row(label: String, value: String, valueColor: Int = white): TextView {
-        return TextView(this@BmsDetailActivity as android.content.Context).apply {
+        return TextView(this@BmsDetailActivity).apply {
             this.text = "$label    $value"
             textSize = 15f
             setTextColor(valueColor)
