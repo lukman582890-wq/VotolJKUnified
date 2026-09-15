@@ -166,7 +166,13 @@ override fun onCreate(b: Bundle?) { super.onCreate(b); setContentView(R.layout.a
     private fun scanBle(){ if(!adapter.isEnabled){startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));return}; ble.clear(); scanner=adapter.bluetoothLeScanner; scanner?.startScan(bleCallback); jkStatus.text="SCANNING…"; log.text="BLE scan active. Tap a JK BMS device to connect."; handler.postDelayed({scanner?.stopScan(bleCallback);if(jkStatus.text=="SCANNING…")jkStatus.text="SELECT DEVICE"},10000);renderBle() }
     private fun renderBle(){ val rows=ble.values.map{d->"${d.name ?: "Unnamed BLE device"}\n${d.address}"};jkDevices.text=if(rows.isEmpty())"Scanning…" else rows.joinToString("\n\n");jkDevices.setOnClickListener{ble.values.firstOrNull()?.let{connectJk(it)}} }
     private fun connectJk(d:BluetoothDevice){jkStatus.text="CONNECTING…";log.text="JK BMS BLE connecting to ${d.name ?: d.address}";jkGatt=d.connectGatt(this,false,gattCallback)}
-    private val gattCallback=object:BluetoothGattCallback(){override fun onConnectionStateChange(g:BluetoothGatt,s:Int,n:Int){runOnUiThread{if(n==BluetoothProfile.STATE_CONNECTED){jkStatus.text="CONNECTED";jkStatus.setTextColor(0xFF45D6A3.toInt());log.text="JK BMS BLE connected. Discovering services…";g.discoverServices()}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onCharacteristicChanged(g:BluetoothGatt,c:BluetoothGattCharacteristic){
+    private val gattCallback=object:BluetoothGattCallback(){override fun onConnectionStateChange(g:BluetoothGatt,s:Int,n:Int){runOnUiThread{if(n==BluetoothProfile.STATE_CONNECTED){jkStatus.text="CONNECTED";jkStatus.setTextColor(0xFF45D6A3.toInt());log.text="JK BMS BLE connected. Discovering services…";g.discoverServices()
+handler.postDelayed({
+    sendJkCommand(g, 0x96)
+}, 3000)
+handler.postDelayed({
+    sendJkCommand(g, 0x97)
+}, 5000)}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onCharacteristicChanged(g:BluetoothGatt,c:BluetoothGattCharacteristic){
 val data=c.value ?: return
 val hex=data.joinToString(" "){ "%02X".format(it.toInt() and 0xFF) }
 runOnUiThread{log.append("\\nJK RX [${c.uuid}] $hex\\n")}
@@ -199,7 +205,60 @@ override fun onServicesDiscovered(g:BluetoothGatt,s:Int){
             log.text="JK BMS GATT\\n"+lines.joinToString("\\n")
         }
     }}
-    private fun disconnectJk(){runCatching{jkGatt?.disconnect();jkGatt?.close()};jkGatt=null;jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}
+    private var jkCommandCounter = 0
+
+private fun sendJkCommand(g: BluetoothGatt, command: Int) {
+    val service = g.getService(
+        UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")
+    )
+
+    if (service == null) {
+        runOnUiThread { log.append("\nJK TX ERROR: FFE0 tidak ditemukan\n") }
+        return
+    }
+
+    val characteristic = service.getCharacteristic(
+        UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
+    )
+
+    if (characteristic == null) {
+        runOnUiThread { log.append("\nJK TX ERROR: FFE1 tidak ditemukan\n") }
+        return
+    }
+
+    val frame = ByteArray(20)
+    frame[0] = 0xAA.toByte()
+    frame[1] = 0x55.toByte()
+    frame[2] = 0x90.toByte()
+    frame[3] = 0xEB.toByte()
+    frame[4] = command.toByte()
+    frame[5] = 0x00
+
+    frame[16] = (jkCommandCounter and 0xFF).toByte()
+    jkCommandCounter = (jkCommandCounter + 1) and 0xFF
+
+    var crc = 0
+    for (i in 0..18) {
+        crc = (crc + (frame[i].toInt() and 0xFF)) and 0xFF
+    }
+    frame[19] = crc.toByte()
+
+    characteristic.writeType =
+        BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+    characteristic.value = frame
+
+    val ok = g.writeCharacteristic(characteristic)
+
+    val hex = frame.joinToString(" ") {
+        "%02X".format(it.toInt() and 0xFF)
+    }
+
+    runOnUiThread {
+        log.append("\nJK TX [${characteristic.uuid}] $hex\nWRITE RESULT: $ok\n")
+    }
+}
+
+private fun disconnectJk(){runCatching{jkGatt?.disconnect();jkGatt?.close()};jkGatt=null;jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}
 
     private fun launchLocationPicker(mode: String) {
         startActivityForResult(
