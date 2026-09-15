@@ -24,6 +24,8 @@ jobs:
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
       - name: Patch VOTOL dashboard
         run: python3 scripts/patch_votol_dashboard.py
+      - name: Add floating REPORT
+        run: python3 scripts/patch_report_button.py
       - name: Fix live charge estimate
         run: python3 -c 'from pathlib import Path; p=Path("app/src/main/java/com/votoljk/unified/MainActivity.kt"); s=p.read_text(); old="val hours = data.fullAh / amps"; new="val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)\n            val hours = chargeAh / amps"; p.write_text(s.replace(old,new,1) if old in s else s)'
       - name: Setup Gradle
