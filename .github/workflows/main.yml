@@ -27,6 +27,23 @@ jobs:
       - name: Install Android SDK
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
 
+      - name: Fix live charge estimate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/src/main/java/com/votoljk/unified/MainActivity.kt")
+          s = p.read_text()
+          old = "val hours = data.fullAh / amps"
+          new = "val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)\n            val hours = chargeAh / amps"
+          if old in s:
+              p.write_text(s.replace(old, new, 1))
+              print("CHARGE ESTIMATE FORMULA FIXED")
+          elif "val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)" in s:
+              print("CHARGE ESTIMATE FORMULA ALREADY FIXED")
+          else:
+              raise SystemExit("Charge estimate formula not found")
+          PY
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
