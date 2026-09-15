@@ -48,18 +48,11 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path("app/src/main/java/com/votoljk/unified/MainActivity.kt")
           s = p.read_text()
-          old = '''    private fun readClassic(input: InputStream) {
-          val buf = ByteArray(1024)
-          while (votolSocket?.isConnected == true) {
-              val n = runCatching { input.read(buf) }.getOrDefault(-1); if (n <= 0) break
-              val hex = buf.copyOf(n).joinToString(" ") { String.format("%02X", it) }
-              runOnUiThread { log.text = "VOTOL RX ${n}B  $hex" }
-          }
-      }
-      '''
-          new = '''    private fun readClassic(input: InputStream) {
+          pattern = r'    private fun readClassic\(input: InputStream\) \{.*?\n    \}\n\n    private fun disconnectVotol'
+          replacement = '''    private fun readClassic(input: InputStream) {
           val buf = ByteArray(512)
           var packetCount = 0L
           while (votolSocket?.isConnected == true) {
@@ -67,18 +60,16 @@ jobs:
               if (n <= 0) break
               packetCount++
               val hex = buf.copyOf(n).joinToString(" ") { String.format("%02X", it.toInt() and 0xFF) }
-              runOnUiThread {
-                  log.append("\\nVOTOL RX #$packetCount ${n}B  $hex\\n")
-              }
+              runOnUiThread { log.append("\\nVOTOL RX #$packetCount ${n}B  $hex\\n") }
           }
-          runOnUiThread {
-              log.append("\\nVOTOL RX THREAD STOPPED\\n")
-          }
+          runOnUiThread { log.append("\\nVOTOL RX THREAD STOPPED\\n") }
       }
-      '''
-          if old not in s:
-              raise SystemExit("readClassic block not found")
-          p.write_text(s.replace(old, new, 1))
+
+    private fun disconnectVotol'''
+          s2, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit("readClassic method not found")
+          p.write_text(s2)
           print("VOTOL RAW RX LOGGER UPDATED")
           PY
 
