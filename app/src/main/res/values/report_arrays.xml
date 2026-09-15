@@ -1,0 +1,4 @@
+<resources>
+<string-array name="report_types"><item>Trip Meter</item><item>Daily</item><item>Weekly</item><item>Monthly</item><item>Custom Range</item></string-array>
+<string-array name="report_trips"><item>Trip Aktif</item><item>Trip Terakhir</item><item>Semua Trip</item></string-array>
+</resources>
