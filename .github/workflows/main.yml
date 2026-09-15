@@ -27,7 +27,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-          import base64
           p = Path("app/src/main/java/com/votoljk/unified/MainActivity.kt")
           s = p.read_text()
 
@@ -36,13 +35,13 @@ jobs:
           if old_charge in s:
               s = s.replace(old_charge, new_charge, 1)
 
-          connect_new = base64.b64decode("VGhyZWFkIHsKICAgICAgICAgICAgICAgICAgICB2YWwgcXVlcnkgPSBieXRlQXJyYXlPZigKICAgICAgICAgICAgICAgICAgICAgICAgMHhDOS50b0J5dGUoKSwgMHgxNCwgMHgwMiwgMHg1MywgMHg0OCwgMHg0RiwgMHg1NywgMHgwMCwKICAgICAgICAgICAgICAgICAgICAgICAgMHgwMCwgMHgwMCwgMHgwMCwgMHgwMCwgMHhBQS50b0J5dGUoKSwgMHgwMCwgMHgwMCwgMHgwLAogICAgICAgICAgICAgICAgICAgICAgICAgMHgxOCwgMHhBQS50b0J5dGUoKSwgMHgwMCwgMHgwMCwgMHgwMCwgMHgwMCwgMHhDNC50b0J5dGUoKSwgMHhE
-ICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgIHdoaWxlICh2b3RvbFNvY2tldD8uaXNDb25uZWN0ZWQgPT0gdHJ1ZSkgewogICAgICAgICAgICAgICAgICAgICAgIHJ1bkNhdGNoaW5nIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHMub3V0cHV0U3RyZWFtLndyaXRlKHF1ZXJ5KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgcy5vdXRwdXRTdHJlYW0uZmx1c2goKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgdmFsIGhleCA9IHF1ZXJ5LmpvaW5Ub1N0cmluZygiICIpIHsgIiUwMlgiLmZvcm1hdChpdC50b0ludCgpIGFuZCAweEZGKSB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBUWCAyNEIgICRoZXhcbiIpIH0KICAgICAgICAgICAgICAgICAgICAgICAgfS5vblBhaWx1cmUgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgcnVuT25VaVRocmVhZCB7IGxvZy5hcHBlbmQoIlxuVk9UT0wgVFggRVJST1I6ICR7aXQuamF2YUNsYXNzLnNpbXBsZU5hbWV9OiAke2l0Lm1lc3NhZ2V9XG4iKSB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBicmVhawogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgIFRocmVhZC5zbGVlcCgxMDAwKQogICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIH0uc3RhcnQoKQogICAgICAgICAgICAgICAgcmVhZENsYXNzaWMo cy5pbnB1dFN0cmVhbSk=")
-          # The query block is patched separately below to avoid protocol edits in the source.
-          if "readClassic(s.inputStream())" in s:
-              query = bytearray([0xC9,0x14,0x02,0x53,0x48,0x4F,0x57,0x00,0x00,0x00,0x00,0x00,0xAA,0x00,0x00,0x00,0x18,0xAA,0x00,0x00,0x00,0x00,0xC4,0x0D])
-              q = """Thread {
-                    val query = byteArrayOf(%s)
+          query = """byteArrayOf(
+                        0xC9.toByte(), 0x14, 0x02, 0x53, 0x48, 0x4F, 0x57, 0x00,
+                        0x00, 0x00, 0x00, 0x00, 0xAA.toByte(), 0x00, 0x00, 0x00,
+                        0x18, 0xAA.toByte(), 0x00, 0x00, 0x00, 0x00, 0xC4.toByte(), 0x0D
+                    )"""
+          tx = """Thread {
+                    val query = %s
                     while (votolSocket?.isConnected == true) {
                         runCatching {
                             s.outputStream.write(query)
@@ -56,8 +55,9 @@ ICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgIHdoaWxlICh2b3RvbFNvY2tl
                         Thread.sleep(1000)
                     }
                 }.start()
-                readClassic(s.inputStream())""" % ", ".join("0x%02X.toByte()" % x for x in query)
-              s = s.replace("readClassic(s.inputStream())", q, 1)
+                readClassic(s.inputStream())""" % query
+          if "readClassic(s.inputStream())" in s:
+              s = s.replace("readClassic(s.inputStream())", tx, 1)
 
           rx = '''private fun readClassic(input: InputStream) {
         val buf = ByteArray(1024)
