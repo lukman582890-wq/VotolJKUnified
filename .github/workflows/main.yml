@@ -22,10 +22,71 @@ jobs:
           packages: ''
       - name: Install Android SDK
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
-      - name: Patch charge estimate
-        run: python3 -c "from pathlib import Path;p=Path('app/src/main/java/com/votoljk/unified/MainActivity.kt');s=p.read_text();old='val hours = data.fullAh / amps';new='val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)\\n            val hours = chargeAh / amps';p.write_text(s.replace(old,new,1) if old in s else s);print('CHARGE ESTIMATE OK')"
-      - name: Patch VOTOL diagnostics
-        run: python3 -c "import base64,re;from pathlib import Path;p=Path('app/src/main/java/com/votoljk/unified/MainActivity.kt');s=p.read_text();co=base64.b64decode('VGhyZWFkIHsKICAgICAgICAgICAgICAgICAgICB2YWwgcXVlcnkgPSBieXRlQXJyYXlPZigKICAgICAgICAgICAgICAgICAgICAgICAgMHhDOS50b0J5dGUoKSwgMHgxNCwgMHgwMiwgMHg1MywgMHg0OCwgMHg0RiwgMHg1NywgMHgwMCwKICAgICAgICAgICAgICAgICAgICAgICAgMHgwMCwgMHgwMCwgMHgwMCwgMHgwMCwgMHhBQS50b0J5dGUoKSwgMHgwMCwgMHgwMCwgMHgwLAogICAgICAgICAgICAgICAgICAgICAgICAgMHgxOCwgMHhBQS50b0J5dGUoKSwgMHgwMCwgMHgwMCwgMHgwMCwgMHgwMCwgMHhDNC50b0J5dGUoKSwgMHhEClxuICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgIHdoaWxlICh2b3RvbFNvY2tldD8uaXNDb25uZWN0ZWQgPT0gdHJ1ZSkgewogICAgICAgICAgICAgICAgICAgICAgIHJ1bkNhdGNoaW5nIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHMub3V0cHV0U3RyZWFtLndyaXRlKHF1ZXJ5KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgcy5vdXRwdXRTdHJlYW0uZmx1c2goKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgdmFsIGhleCA9IHF1ZXJ5LmpvaW5Ub1N0cmluZygiICIpIHsgIiUwMlgiLmZvcm1hdChpdC50b0ludCgpIGFuZCAweEZGKSB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBUWCAyNEIgICRoZXhcbiIpIH0KICAgICAgICAgICAgICAgICAgICAgICAgfS5vbkZhaWx1cmUgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgcnVuT25VaVRocmVhZCB7IGxvZy5hcHBlbmQoIlxuVk9UT0wgVFggRVJST1I6ICR7aXQuamF2YUNsYXNzLnNpbXBsZU5hbWV9OiAke2l0Lm1lc3NhZ2V9XG4iKSB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBicmVhawogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgIFRocmVhZC5zbGVlcCgxMDAwKQogICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIH0uc3RhcnQoKQogICAgICAgICAgICAgICAgcmVhZENsYXNzaWMocy5pbnB1dFN0cmVhbSk='.replace('\\n','\\n').encode()).decode();rn=base64.b64decode('cHJpdmF0ZSBmdW4gcmVhZENsYXNzaWMoaW5wdXQ6IElucHV0U3RyZWFtKSB7CiAgICAgICAgdmFsIGJ1ZiA9IEJ5dGVBcnJheSgxMDI0KQogICAgICAgIHZhciBwYWNrZXQgPSAwTAogICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcblZPVE9MIFJYIFNUUkVBTSBTVEFSVFxuIikgfQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIHdoaWxlICh2b3RvbFNvY2tldD8uaXNDb25uZWN0ZWQgPT0gdHJ1ZSkgewogICAgICAgICAgICAgICAgdmFsIG4gPSBpbnB1dC5yZWFkKGJ1ZikKICAgICAgICAgICAgICAgIGlmIChuIDwgMCkgewogICAgICAgICAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcblZPVE9MIFJYIEVPRlxuIikgfQogICAgICAgICAgICAgICAgICAgIGJyZWFrCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICBpZiAobiA9PSAwKSBjb250aW51ZQogICAgICAgICAgICAgICAgcGFja2V0KysKICAgICAgICAgICAgICAgIHZhbCBoZXggPSBidWYuY29weU9mKG4pLmpvaW5Ub1N0cmluZygiICIpIHsgIiUwMlgiLmZvcm1hdChpdC50b0ludCgpIGFuZCAweEZGKSB9CiAgICAgICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBSWCAjJHBhY2tldCAke259QiAgJGhleFxuIikgfQogICAgICAgICAgICB9CiAgICAgICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcblZPVE9MIFJYIEVSUk9SOiAke2UuamF2YUNsYXNzLnNpbXBsZU5hbWV9OiAke2UubWVzc2FnZX1cbiIpIH0KICAgICAgICB9IGZpbmFsbHkgewogICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBSWCBTVFJFQU0gRU5EXG4iKSB9CiAgICAgICAgfQogICAgfQ=='.encode()).decode();assert 'readClassic(s.inputStream())' in s;assert 'private fun readClassic(input: InputStream)' in s;s=s.replace('readClassic(s.inputStream())',co,1);s=re.sub(r'private fun readClassic\\(input: InputStream\\) \\{.*?^    \\}',rn,s,count=1,flags=re.S|re.M);p.write_text(s);print('VOTOL DIAGNOSTICS PATCHED')"
+      - name: Patch source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import base64
+          p = Path("app/src/main/java/com/votoljk/unified/MainActivity.kt")
+          s = p.read_text()
+
+          old_charge = "val hours = data.fullAh / amps"
+          new_charge = "val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)\n            val hours = chargeAh / amps"
+          if old_charge in s:
+              s = s.replace(old_charge, new_charge, 1)
+
+          connect_new = base64.b64decode("VGhyZWFkIHsKICAgICAgICAgICAgICAgICAgICB2YWwgcXVlcnkgPSBieXRlQXJyYXlPZigKICAgICAgICAgICAgICAgICAgICAgICAgMHhDOS50b0J5dGUoKSwgMHgxNCwgMHgwMiwgMHg1MywgMHg0OCwgMHg0RiwgMHg1NywgMHgwMCwKICAgICAgICAgICAgICAgICAgICAgICAgMHgwMCwgMHgwMCwgMHgwMCwgMHgwMCwgMHhBQS50b0J5dGUoKSwgMHgwMCwgMHgwMCwgMHgwLAogICAgICAgICAgICAgICAgICAgICAgICAgMHgxOCwgMHhBQS50b0J5dGUoKSwgMHgwMCwgMHgwMCwgMHgwMCwgMHgwMCwgMHhDNC50b0J5dGUoKSwgMHhE
+ICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgIHdoaWxlICh2b3RvbFNvY2tldD8uaXNDb25uZWN0ZWQgPT0gdHJ1ZSkgewogICAgICAgICAgICAgICAgICAgICAgIHJ1bkNhdGNoaW5nIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHMub3V0cHV0U3RyZWFtLndyaXRlKHF1ZXJ5KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgcy5vdXRwdXRTdHJlYW0uZmx1c2goKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgdmFsIGhleCA9IHF1ZXJ5LmpvaW5Ub1N0cmluZygiICIpIHsgIiUwMlgiLmZvcm1hdChpdC50b0ludCgpIGFuZCAweEZGKSB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBUWCAyNEIgICRoZXhcbiIpIH0KICAgICAgICAgICAgICAgICAgICAgICAgfS5vblBhaWx1cmUgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgcnVuT25VaVRocmVhZCB7IGxvZy5hcHBlbmQoIlxuVk9UT0wgVFggRVJST1I6ICR7aXQuamF2YUNsYXNzLnNpbXBsZU5hbWV9OiAke2l0Lm1lc3NhZ2V9XG4iKSB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBicmVhawogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgIFRocmVhZC5zbGVlcCgxMDAwKQogICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIH0uc3RhcnQoKQogICAgICAgICAgICAgICAgcmVhZENsYXNzaWMo cy5pbnB1dFN0cmVhbSk=")
+          # The query block is patched separately below to avoid protocol edits in the source.
+          if "readClassic(s.inputStream())" in s:
+              query = bytearray([0xC9,0x14,0x02,0x53,0x48,0x4F,0x57,0x00,0x00,0x00,0x00,0x00,0xAA,0x00,0x00,0x00,0x18,0xAA,0x00,0x00,0x00,0x00,0xC4,0x0D])
+              q = """Thread {
+                    val query = byteArrayOf(%s)
+                    while (votolSocket?.isConnected == true) {
+                        runCatching {
+                            s.outputStream.write(query)
+                            s.outputStream.flush()
+                            val hex = query.joinToString(" ") { "%02X".format(it.toInt() and 0xFF) }
+                            runOnUiThread { log.append("\\nVOTOL TX 24B  $hex\\n") }
+                        }.onFailure {
+                            runOnUiThread { log.append("\\nVOTOL TX ERROR: ${it.javaClass.simpleName}: ${it.message}\\n") }
+                            break
+                        }
+                        Thread.sleep(1000)
+                    }
+                }.start()
+                readClassic(s.inputStream())""" % ", ".join("0x%02X.toByte()" % x for x in query)
+              s = s.replace("readClassic(s.inputStream())", q, 1)
+
+          rx = '''private fun readClassic(input: InputStream) {
+        val buf = ByteArray(1024)
+        var packet = 0L
+        runOnUiThread { log.append("\\nVOTOL RX STREAM START\\n") }
+        try {
+            while (votolSocket?.isConnected == true) {
+                val n = input.read(buf)
+                if (n < 0) {
+                    runOnUiThread { log.append("\\nVOTOL RX EOF\\n") }
+                    break
+                }
+                if (n == 0) continue
+                packet++
+                val hex = buf.copyOf(n).joinToString(" ") { "%02X".format(it.toInt() and 0xFF) }
+                runOnUiThread { log.append("\\nVOTOL RX #$packet ${n}B  $hex\\n") }
+            }
+        } catch (e: Exception) {
+            runOnUiThread { log.append("\\nVOTOL RX ERROR: ${e.javaClass.simpleName}: ${e.message}\\n") }
+        } finally {
+            runOnUiThread { log.append("\\nVOTOL RX STREAM END\\n") }
+        }
+    }'''
+          s, n = re.subn(r'private fun readClassic\(input: InputStream\) \{.*?^    \}', rx, s, count=1, flags=re.S|re.M)
+          if n != 1:
+              raise SystemExit("readClassic function not found")
+          p.write_text(s)
+          print("SOURCE PATCH OK")
+          PY
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
