@@ -8,91 +8,50 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
       - name: Setup Android
         uses: android-actions/setup-android@v3
         with:
           packages: ''
+
       - name: Install Android SDK
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
-      - name: Patch source
+
+      - name: Fix live charge estimate
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p = Path("app/src/main/java/com/votoljk/unified/MainActivity.kt")
           s = p.read_text()
-
-          old_charge = "val hours = data.fullAh / amps"
-          new_charge = "val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)\n            val hours = chargeAh / amps"
-          if old_charge in s:
-              s = s.replace(old_charge, new_charge, 1)
-
-          query = """byteArrayOf(
-                        0xC9.toByte(), 0x14, 0x02, 0x53, 0x48, 0x4F, 0x57, 0x00,
-                        0x00, 0x00, 0x00, 0x00, 0xAA.toByte(), 0x00, 0x00, 0x00,
-                        0x18, 0xAA.toByte(), 0x00, 0x00, 0x00, 0x00, 0xC4.toByte(), 0x0D
-                    )"""
-          tx = """Thread {
-                    val query = %s
-                    while (votolSocket?.isConnected == true) {
-                        runCatching {
-                            s.outputStream.write(query)
-                            s.outputStream.flush()
-                            val hex = query.joinToString(" ") { "%02X".format(it.toInt() and 0xFF) }
-                            runOnUiThread { log.append("\\nVOTOL TX 24B  $hex\\n") }
-                        }.onFailure {
-                            runOnUiThread { log.append("\\nVOTOL TX ERROR: ${it.javaClass.simpleName}: ${it.message}\\n") }
-                            break
-                        }
-                        Thread.sleep(1000)
-                    }
-                }.start()
-                readClassic(s.inputStream())""" % query
-          if "readClassic(s.inputStream())" in s:
-              s = s.replace("readClassic(s.inputStream())", tx, 1)
-
-          rx = '''private fun readClassic(input: InputStream) {
-        val buf = ByteArray(1024)
-        var packet = 0L
-        runOnUiThread { log.append("\\nVOTOL RX STREAM START\\n") }
-        try {
-            while (votolSocket?.isConnected == true) {
-                val n = input.read(buf)
-                if (n < 0) {
-                    runOnUiThread { log.append("\\nVOTOL RX EOF\\n") }
-                    break
-                }
-                if (n == 0) continue
-                packet++
-                val hex = buf.copyOf(n).joinToString(" ") { "%02X".format(it.toInt() and 0xFF) }
-                runOnUiThread { log.append("\\nVOTOL RX #$packet ${n}B  $hex\\n") }
-            }
-        } catch (e: Exception) {
-            runOnUiThread { log.append("\\nVOTOL RX ERROR: ${e.javaClass.simpleName}: ${e.message}\\n") }
-        } finally {
-            runOnUiThread { log.append("\\nVOTOL RX STREAM END\\n") }
-        }
-    }'''
-          s, n = re.subn(r'private fun readClassic\(input: InputStream\) \{.*?^    \}', rx, s, count=1, flags=re.S|re.M)
-          if n != 1:
-              raise SystemExit("readClassic function not found")
-          p.write_text(s)
-          print("SOURCE PATCH OK")
+          old = "val hours = data.fullAh / amps"
+          new = "val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)\n            val hours = chargeAh / amps"
+          if old in s:
+              p.write_text(s.replace(old, new, 1))
+              print("CHARGE ESTIMATE FORMULA FIXED")
+          elif "val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)" in s:
+              print("CHARGE ESTIMATE FORMULA ALREADY FIXED")
+          else:
+              raise SystemExit("Charge estimate formula not found")
           PY
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+
       - name: Build APK
         run: gradle assembleDebug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
