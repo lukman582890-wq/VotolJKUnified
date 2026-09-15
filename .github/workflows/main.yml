@@ -45,46 +45,7 @@ jobs:
           PY
 
       - name: Add VOTOL SPP RX diagnostics
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("app/src/main/java/com/votoljk/unified/MainActivity.kt")
-          s = p.read_text()
-          old = '''    private fun readClassic(input: InputStream) {
-          val buf = ByteArray(1024)
-          while (votolSocket?.isConnected == true) {
-              val n = runCatching { input.read(buf) }.getOrDefault(-1); if (n <= 0) break
-              val hex = buf.copyOf(n).joinToString(" ") { String.format("%02X", it) }
-              runOnUiThread { log.text = "VOTOL RX ${n}B  $hex" }
-          }
-      }'''
-          new = '''    private fun readClassic(input: InputStream) {
-          val buf = ByteArray(1024)
-          var packet = 0L
-          runOnUiThread { log.append("\\nVOTOL RX STREAM START\\n") }
-          try {
-              while (votolSocket?.isConnected == true) {
-                  val n = input.read(buf)
-                  if (n < 0) {
-                      runOnUiThread { log.append("\\nVOTOL RX EOF\\n") }
-                      break
-                  }
-                  if (n == 0) continue
-                  packet++
-                  val hex = buf.copyOf(n).joinToString(" ") { String.format("%02X", it.toInt() and 0xFF) }
-                  runOnUiThread { log.append("\\nVOTOL RX #$packet ${n}B  $hex\\n") }
-              }
-          } catch (e: Exception) {
-              runOnUiThread { log.append("\\nVOTOL RX ERROR: ${e.javaClass.simpleName}: ${e.message}\\n") }
-          } finally {
-              runOnUiThread { log.append("\\nVOTOL RX STREAM END\\n") }
-          }
-      }'''
-          if old not in s:
-              raise SystemExit("readClassic block not found")
-          p.write_text(s.replace(old, new, 1))
-          print("VOTOL SPP RX DIAGNOSTICS ADDED")
-          PY
+        run: python3 -c "import base64;from pathlib import Path;p=Path('app/src/main/java/com/votoljk/unified/MainActivity.kt');s=p.read_text();old=base64.b64decode('ICAgIHByaXZhdGUgZnVuIHJlYWRDbGFzc2ljKGlucHV0OiBJbnB1dFN0cmVhbSkgewogICAgICAgIHZhbCBidWYgPSBCeXRlQXJyYXkoMTAyNCkKICAgICAgICB3aGlsZSAodm90b2xTb2NrZXQ/LmlzQ29ubmVjdGVkID09IHRydWUpIHsKICAgICAgICAgICAgdmFsIG4gPSBydW5DYXRjaGluZyB7IGlucHV0LnJlYWQoYnVmKSB9LmdldE9yRGVmYXVsdCgtMSk7IGlmIChuIDw9IDApIGJyZWFrCiAgICAgICAgICAgIHZhbCBoZXggPSBidWYuY29weU9mKG4pLmpvaW5Ub1N0cmluZygiICIpIHsgU3RyaW5nLmZvcm1hdCgiJTAyWCIsIGl0KSB9CiAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cudGV4dCA9ICJWT1RPTCBSWCAke259QiAgJGhleCIgfQogICAgICAgIH0KICAgIH0='.encode()).decode();new=base64.b64decode('ICAgIHByaXZhdGUgZnVuIHJlYWRDbGFzc2ljKGlucHV0OiBJbnB1dFN0cmVhbSkgewogICAgICAgIHZhbCBidWYgPSBCeXRlQXJyYXkoMTAyNCkKICAgICAgICB2YXIgcGFja2V0ID0gMEwKICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBSWCBTVFJFQU0gU1RBUlRcbiIpIH0KICAgICAgICB0cnkgewogICAgICAgICAgICB3aGlsZSAodm90b2xTb2NrZXQ/LmlzQ29ubmVjdGVkID09IHRydWUpIHsKICAgICAgICAgICAgICAgIHZhbCBuID0gaW5wdXQucmVhZChidWYpCiAgICAgICAgICAgICAgICBpZiAobiA8IDApIHsKICAgICAgICAgICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBSWCBFT0ZcbiIpIH0KICAgICAgICAgICAgICAgICAgICBicmVhawogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgaWYgKG4gPT0gMCkgY29udGludWUKICAgICAgICAgICAgICAgIHBhY2tldCsrCiAgICAgICAgICAgICAgICB2YWwgaGV4ID0gYnVmLmNvcHlPZihuKS5qb2luVG9TdHJpbmcoIiAiKSB7IFN0cmluZy5mb3JtYXQoIiUwMlgiLCBpdC50b0ludCgpIGFuZCAweEZGKSB9CiAgICAgICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBSWCAjJHBhY2tldCAke259QiAgJGhleFxuIikgfQogICAgICAgICAgICB9CiAgICAgICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcblZPVE9MIFJYIEVSUk9SOiAke2UuamF2YUNsYXNzLnNpbXBsZU5hbWV9OiAke2UubWVzc2FnZX1cbiIpIH0KICAgICAgICB9IGZpbmFsbHkgewogICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBSWCBTVFJFQU0gRU5EXG4iKSB9CiAgICAgICAgfQogICAgfQ=='.encode()).decode();assert old in s,'readClassic block not found';p.write_text(s.replace(old,new,1));print('VOTOL RX DIAGNOSTICS ADDED')"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
