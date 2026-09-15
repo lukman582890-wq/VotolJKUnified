@@ -173,6 +173,7 @@ handler.postDelayed({
 handler.postDelayed({
     sendJkCommand(g, 0x97)
 }, 5000)}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onCharacteristicChanged(g:BluetoothGatt,c:BluetoothGattCharacteristic){
+        appendJkRxChunk(value)
 val data=c.value ?: return
 val hex=data.joinToString(" "){ "%02X".format(it.toInt() and 0xFF) }
 runOnUiThread{log.append("\\nJK RX [${c.uuid}] $hex\\n")}
@@ -257,6 +258,219 @@ private fun sendJkCommand(g: BluetoothGatt, command: Int) {
         log.append("\nJK TX [${characteristic.uuid}] $hex\nWRITE RESULT: $ok\n")
     }
 }
+
+
+private val jkRxFrameBuffer = ArrayList<Byte>()
+
+private fun appendJkRxChunk(value: ByteArray) {
+    if (value.contentEquals(byteArrayOf(0x41, 0x54, 0x0D, 0x0A))) return
+
+    jkRxFrameBuffer.addAll(value.toList())
+
+    while (true) {
+        val header = byteArrayOf(
+            0x55.toByte(), 0xAA.toByte(),
+            0xEB.toByte(), 0x90.toByte()
+        )
+
+        var start = -1
+        for (i in 0..jkRxFrameBuffer.size - 4) {
+            if (jkRxFrameBuffer[i] == header[0] &&
+                jkRxFrameBuffer[i + 1] == header[1] &&
+                jkRxFrameBuffer[i + 2] == header[2] &&
+                jkRxFrameBuffer[i + 3] == header[3]) {
+                start = i
+                break
+            }
+        }
+
+        if (start < 0) {
+            if (jkRxFrameBuffer.size > 3) {
+                val keep = jkRxFrameBuffer.takeLast(3)
+                jkRxFrameBuffer.clear()
+                jkRxFrameBuffer.addAll(keep)
+            }
+            return
+        }
+
+        if (start > 0) {
+            repeat(start) { jkRxFrameBuffer.removeAt(0) }
+        }
+
+        if (jkRxFrameBuffer.size < 300) return
+
+        val frame = jkRxFrameBuffer.take(300).toByteArray()
+
+        var crc = 0
+        for (i in 0 until 299) {
+            crc = (crc + (frame[i].toInt() and 0xFF)) and 0xFF
+        }
+
+        if (crc != (frame[299].toInt() and 0xFF)) {
+            jkRxFrameBuffer.removeAt(0)
+            continue
+        }
+
+        repeat(300) { jkRxFrameBuffer.removeAt(0) }
+
+        if ((frame[4].toInt() and 0xFF) == 0x02) {
+            parseJkRuntimeFrame(frame)
+        }
+    }
+}
+
+private fun u16(frame: ByteArray, offset: Int): Int {
+    return (frame[offset].toInt() and 0xFF) or
+            ((frame[offset + 1].toInt() and 0xFF) shl 8)
+}
+
+private fun i16(frame: ByteArray, offset: Int): Int {
+    return u16(frame, offset).let {
+        if (it and 0x8000 != 0) it - 0x10000 else it
+    }
+}
+
+private fun i32(frame: ByteArray, offset: Int): Int {
+    return (frame[offset].toInt() and 0xFF) or
+            ((frame[offset + 1].toInt() and 0xFF) shl 8) or
+            ((frame[offset + 2].toInt() and 0xFF) shl 16) or
+            ((frame[offset + 3].toInt() and 0xFF) shl 24)
+}
+
+private fun u32(frame: ByteArray, offset: Int): Long {
+    return (i32(frame, offset).toLong() and 0xFFFFFFFFL)
+}
+
+private fun parseJkRuntimeFrame(frame: ByteArray) {
+    val cellVoltages = ArrayList<Float>()
+    val cellResistances = ArrayList<Float>()
+
+    // JK02-32S layout. Runtime mask confirms this battery has 20 enabled cells.
+    val mask =
+        (frame[70].toInt() and 0xFF) or
+        ((frame[71].toInt() and 0xFF) shl 8) or
+        ((frame[72].toInt() and 0xFF) shl 16) or
+        ((frame[73].toInt() and 0xFF) shl 24)
+
+    val cellCount = (0 until 32).count { (mask and (1 shl it)) != 0 }
+
+    for (i in 0 until cellCount.coerceAtMost(32)) {
+        cellVoltages.add(u16(frame, 6 + i * 2) * 0.001f)
+        cellResistances.add(u16(frame, 80 + i * 2) * 0.001f)
+    }
+
+    val totalVoltage = i32(frame, 150) * 0.001f
+    val power = u32(frame, 154) * 0.001f
+    val current = i32(frame, 158) * 0.001f
+    val temp1 = i16(frame, 162) * 0.1f
+    val temp2 = i16(frame, 164) * 0.1f
+    val soc = frame[173].toInt() and 0xFF
+    val remainingAh = u32(frame, 174) * 0.001f
+    val fullAh = u32(frame, 178) * 0.001f
+    val cycleCount = u32(frame, 182).toInt()
+    val cycleCapacityAh = u32(frame, 186) * 0.001f
+    val soh = frame[190].toInt() and 0xFF
+    val balanceCurrent = i16(frame, 170) * 0.001f
+    val balanceOn = (frame[172].toInt() and 0xFF) != 0
+
+    val chargeMos = (frame[198].toInt() and 0xFF) != 0
+    val dischargeMos = (frame[199].toInt() and 0xFF) != 0
+    val precharge = (frame[200].toInt() and 0xFF) != 0
+    val balancer = (frame[201].toInt() and 0xFF) != 0
+
+    JkBmsDataStore.latest = JkBmsData(
+        cellCount = cellCount,
+        cellVoltages = cellVoltages,
+        cellResistances = cellResistances,
+        totalVoltage = totalVoltage,
+        current = current,
+        power = power.toFloat(),
+        temp1 = temp1,
+        temp2 = temp2,
+        mosTemp = temp1,
+        soc = soc,
+        remainingAh = remainingAh.toFloat(),
+        fullAh = fullAh.toFloat(),
+        cycleCount = cycleCount,
+        cycleCapacityAh = cycleCapacityAh.toFloat(),
+        soh = soh,
+        balanceCurrent = balanceCurrent,
+        balanceOn = balanceOn,
+        chargeMos = chargeMos,
+        dischargeMos = dischargeMos,
+        precharge = precharge,
+        balancer = balancer,
+        emergencySeconds = 0,
+        sleepSeconds = 0L,
+        batteryType = "LFP",
+        chargeStatus = 0
+    )
+
+    runOnUiThread {
+        updateJkDashboard(JkBmsDataStore.latest!!)
+    }
+}
+
+private fun allTextViews(v: android.view.View): List<android.widget.TextView> {
+    val result = ArrayList<android.widget.TextView>()
+
+    if (v is android.widget.TextView) result.add(v)
+
+    if (v is android.view.ViewGroup) {
+        for (i in 0 until v.childCount) {
+            result.addAll(allTextViews(v.getChildAt(i)))
+        }
+    }
+
+    return result
+}
+
+private fun updateJkDashboard(data: JkBmsData) {
+    val views = allTextViews(findViewById(android.R.id.content))
+
+    views.firstOrNull {
+        it.text.toString().contains("%") &&
+        it.text.toString().contains("--")
+    }?.text = "${data.soc} %"
+
+    views.firstOrNull {
+        it.text.toString().contains("V") &&
+        it.text.toString().contains("--")
+    }?.text = "%.3f V".format(data.totalVoltage)
+
+    views.firstOrNull {
+        it.text.toString() == "0.0 A"
+    }?.text = "%.3f A".format(data.current)
+
+    views.firstOrNull {
+        it.text.toString() == "0 W"
+    }?.text = "%.0f W".format(data.power)
+
+    val delta = if (data.cellVoltages.isNotEmpty()) {
+        data.cellVoltages.maxOrNull()!! - data.cellVoltages.minOrNull()!!
+    } else 0f
+
+    views.firstOrNull {
+        it.text.toString() == "0.000 V"
+    }?.text = "%.3f V".format(delta)
+
+    views.firstOrNull {
+        it.text.toString().contains("°C")
+    }?.text = "%.1f °C".format(data.temp1)
+
+    log.append(
+        "\nJK DATA: %dS | %.3fV | %.3fA | %.0fW | SOC %d%% | Δ %.3fV | T %.1f°C\n".format(
+            data.cellCount,
+            data.totalVoltage,
+            data.current,
+            data.power,
+            data.soc,
+            delta,
+            data.temp1
+        )
+    )
+}
+
 
 private fun disconnectJk(){runCatching{jkGatt?.disconnect();jkGatt?.close()};jkGatt=null;jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}
 
