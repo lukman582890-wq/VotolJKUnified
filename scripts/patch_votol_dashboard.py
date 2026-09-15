@@ -77,9 +77,12 @@ block = '''    private val votolPollHandler = Handler(Looper.getMainLooper())
             if (telemetry != null) {
                 repeat(24) { votolRxBuffer.removeAt(0) }
                 runOnUiThread {
+                    val speedKmh = telemetry.rpm.coerceAtLeast(0) * 72f / 500f
+                    findViewById<TextView>(R.id.speedValue).text = String.format("%.0f", speedKmh)
                     findViewById<TextView>(R.id.votolTelemetryValue).text =
                         "Motor RPM    ${telemetry.rpm}\\n" +
                         "Controller  %.1f V / %.1f A / %.1f W\\n".format(telemetry.voltage, telemetry.current, telemetry.voltage * telemetry.current) +
+                        "Speed       %.0f km/h\\n".format(speedKmh) +
                         "Status      ${telemetry.status}   Gear ${telemetry.gear}\\n" +
                         "Fault       0x%08X".format(telemetry.faultMask)
                     findViewById<TextView>(R.id.systemTempValues).text =
@@ -121,7 +124,7 @@ xml = Path('app/src/main/res/layout/activity_main.xml')
 x = xml.read_text()
 if 'android:id="@+id/votolTelemetryValue"' not in x:
     old = 'android:text="Motor RPM\\n0\\n\\nPhase Current\\n0.0 A\\n\\nThrottle\\n0 %"'
-    new = 'android:id="@+id/votolTelemetryValue" android:text="Motor RPM    --\\nController  -- V / -- A / -- W\\nStatus      --\\nFault       --"'
+    new = 'android:id="@+id/votolTelemetryValue" android:text="Motor RPM    --\\nController  -- V / -- A / -- W\\nSpeed       -- km/h\\nStatus      --\\nFault       --"'
     if old not in x:
         raise SystemExit('VOTOL telemetry TextView text block not found')
     xml.write_text(x.replace(old, new, 1))
