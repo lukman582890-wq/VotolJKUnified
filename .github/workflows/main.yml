@@ -45,10 +45,75 @@ jobs:
           PY
 
       - name: Add VOTOL SPP RX diagnostics
-        run: python3 -c 'from pathlib import Path; import base64; p=Path("app/src/main/java/com/votoljk/unified/MainActivity.kt"); s=p.read_text(); old=base64.b64decode("ICAgIHByaXZhdGUgZnVuIHJlYWRDbGFzc2ljKGlucHV0OiBJbnB1dFN0cmVhbSkgewogICAgICAgIHZhbCBidWYgPSBCeXRlQXJyYXkoMTAyNCkKICAgICAgICB3aGlsZSAodm90b2xTb2NrZXQ/LmlzQ29ubmVjdGVkID09IHRydWUpIHsKICAgICAgICAgICAgdmFsIG4gPSBydW5DYXRjaGluZyB7IGlucHV0LnJlYWQoYnVmKSB9LmdldE9yRGVmYXVsdCgtMSk7IGlmIChuIDw9IDApIGJyZWFrCiAgICAgICAgICAgIHZhbCBoZXggPSBidWYuY29weU9mKG4pLmpvaW5Ub1N0cmluZygiICIpIHsgU3RyaW5nLmZvcm1hdCgiJTAyWCIsIGl0KSB9CiAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cudGV4dCA9ICJWT1RPTCBSWCAke259QiAgJGhleCIgfQogICAgICAgIH0KICAgIH0=").decode(); new=base64.b64decode("ICAgIHByaXZhdGUgZnVuIHJlYWRDbGFzc2ljKGlucHV0OiBJbnB1dFN0cmVhbSkgewogICAgICAgIHZhbCBidWYgPSBCeXRlQXJyYXkoMTAyNCkKICAgICAgICB2YXIgcGFja2V0ID0gMEwKICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXFxuVk9UT0wgUlggU1RSRUFNIFNUQVJUXFxuIikgfQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIHdoaWxlICh2b3RvbFNvY2tldD8uaXNDb25uZWN0ZWQgPT0gdHJ1ZSkgewogICAgICAgICAgICAgICAgdmFsIG4gPSBpbnB1dC5yZWFkKGJ1ZikKICAgICAgICAgICAgICAgIGlmIChuIDwgMCkgewogICAgICAgICAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcXG5WT1RPTCBSWCBFT0ZcXG4iKSB9CiAgICAgICAgICAgICAgICAgICAgYnJlYWsKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIGlmIChuID09IDApIGNvbnRpbnVlCiAgICAgICAgICAgICAgICBwYWNrZXQrKwogICAgICAgICAgICAgICAgdmFsIGhleCA9IGJ1Zi5jb3B5T2Yobikuam9pblRvU3RyaW5nKCIgIikgeyBTdHJpbmcuZm9ybWF0KCIlMDJYIiwgaXQudG9JbnQoKSBhbmQgMHhGRikgfQogICAgICAgICAgICAgICAgcnVuT25VaVRocmVhZCB7IGxvZy5hcHBlbmQoIlxcblZPVE9MIFJYICMkcGFja2V0ICR7bn1CICAkaGV4XFxuIikgfQogICAgICAgICAgICB9CiAgICAgICAgfSBjYXRjaCAoZTogRXhjZXB0aW9uKSB7CiAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcXG5WT1RPTCBSWCBFUlJPUjogJHtlLmphdmFDbGFzcy5zaW1wbGVOYW1lfTogJHtlLm1lc3NhZ2V9XFxuIikgfQogICAgICAgIH0gZmluYWxseSB7CiAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcXG5WT1RPTCBSWCBTVFJFQU0gRU5EXFxuIikgfQogICAgICAgIH0KICAgIH0=").decode(); assert old in s, "readClassic function not found"; p.write_text(s.replace(old,new,1))'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/src/main/java/com/votoljk/unified/MainActivity.kt")
+          s = p.read_text()
+          old = '''    private fun readClassic(input: InputStream) {
+          val buf = ByteArray(1024)
+          while (votolSocket?.isConnected == true) {
+              val n = runCatching { input.read(buf) }.getOrDefault(-1); if (n <= 0) break
+              val hex = buf.copyOf(n).joinToString(" ") { String.format("%02X", it) }
+              runOnUiThread { log.text = "VOTOL RX ${n}B  $hex" }
+          }
+      }'''
+          new = '''    private fun readClassic(input: InputStream) {
+          val buf = ByteArray(1024)
+          var packet = 0L
+          runOnUiThread { log.append("\\nVOTOL RX STREAM START\\n") }
+          try {
+              while (votolSocket?.isConnected == true) {
+                  val n = input.read(buf)
+                  if (n < 0) { runOnUiThread { log.append("\\nVOTOL RX EOF\\n") }; break }
+                  if (n == 0) continue
+                  packet++
+                  val hex = buf.copyOf(n).joinToString(" ") { String.format("%02X", it.toInt() and 0xFF) }
+                  runOnUiThread { log.append("\\nVOTOL RX #$packet ${n}B  $hex\\n") }
+              }
+          } catch (e: Exception) {
+              runOnUiThread { log.append("\\nVOTOL RX ERROR: ${e.javaClass.simpleName}: ${e.message}\\n") }
+          } finally {
+              runOnUiThread { log.append("\\nVOTOL RX STREAM END\\n") }
+          }
+      }'''
+          if old in s:
+              p.write_text(s.replace(old, new, 1))
+              print("RX DIAGNOSTICS FIXED")
+          elif "VOTOL RX STREAM START" in s:
+              print("RX DIAGNOSTICS ALREADY PRESENT")
+          else:
+              raise SystemExit("readClassic function not found")
+          PY
 
       - name: Add verified VOTOL live-data query
-        run: python3 -c 'from pathlib import Path; import base64; p=Path("app/src/main/java/com/votoljk/unified/MainActivity.kt"); s=p.read_text(); old=base64.b64decode("ICAgICAgICAgICAgcnVuT25VaVRocmVhZCB7IHZvdG9sU3RhdHVzLnRleHQgPSAiQ09OTkVDVEVEIjsgdm90b2xTdGF0dXMuc2V0VGV4dENvbG9yKDB4RkY0NUQ2QTMudG9JbnQoKSk7IGxvZy50ZXh0ID0gIlZPVE9MIFNQUCBjb25uZWN0ZWQ6ICR7ZC5uYW1lID86IGQuYWRkcmVzc30uIiB9CiAgICAgICAgICAgIHJlYWRDbGFzc2ljKHMuaW5wdXRTdHJlYW0p").decode(); new=base64.b64decode("ICAgICAgICAgICAgcnVuT25VaVRocmVhZCB7IHZvdG9sU3RhdHVzLnRleHQgPSAiQ09OTkVDVEVEIjsgdm90b2xTdGF0dXMuc2V0VGV4dENvbG9yKDB4RkY0NUQ2QTMudG9JbnQoKSk7IGxvZy50ZXh0ID0gIlZPVE9MIFNQUCBjb25uZWN0ZWQ6ICR7ZC5uYW1lID86IGQuYWRkcmVzc30uIiB9CiAgICAgICAgICAgIHZhbCBxdWVyeSA9IGJ5dGVBcnJheU9mKDB4QzkudG9CeXRlKCksIDB4MTQsIDB4MDIsIDB4NTMsIDB4NDgsIDB4NEYsIDB4NTcsIDB4MDAsIDB4MDAsIDB4MDAsIDB4MDAsIDB4MDAsIDB4QUEudG9CeXRlKCksIDB4MDAsIDB4MDAsIDB4MDAsIDB4MTgsIDB4QUEudG9CeXRlKCksIDB4MDAsIDB4MDAsIDB4MDAsIDB4MDAsIDB4MDAsIDB4QzQudG9CeXRlKCksIDB4MEQpCiAgICAgICAgICAgIHMub3V0cHV0U3RyZWFtLndyaXRlKHF1ZXJ5KQogICAgICAgICAgICBzLm91dHB1dFN0cmVhbS5mbHVzaCgpCiAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcXG5WT1RPTCBUWCBRVUVSWSAyNEIgIEM5IDE0IDAyIDUzIDQ4IDRGIDU3IDAwIDAwIDAwIDAwIDAwIEFBIDAwIDAwIDAwIDE4IEFBIDAwIDAwIDAwIDAwIEM0IDBEXFxuIikgfQogICAgICAgICAgICByZWFkQ2xhc3NpYyhzLmlucHV0U3RyZWFtKQ==").decode(); assert old in s, "VOTOL connect block not found"; p.write_text(s.replace(old,new,1))'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/src/main/java/com/votoljk/unified/MainActivity.kt")
+          s = p.read_text()
+          old = "                readClassic(s.inputStream)"
+          query = '''                val query = byteArrayOf(
+                    0xC9.toByte(), 0x14.toByte(), 0x02.toByte(), 0x53.toByte(),
+                    0x48.toByte(), 0x4F.toByte(), 0x57.toByte(), 0x00.toByte(),
+                    0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
+                    0xAA.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
+                    0x18.toByte(), 0xAA.toByte(), 0x00.toByte(), 0x00.toByte(),
+                    0x00.toByte(), 0x00.toByte(), 0xC4.toByte(), 0x0D.toByte()
+                )
+                s.outputStream.write(query)
+                s.outputStream.flush()
+                val queryHex = query.joinToString(" ") { "%02X".format(it.toInt() and 0xFF) }
+                runOnUiThread { log.append("\\nVOTOL TX QUERY 24B  $queryHex\\n") }
+                readClassic(s.inputStream)'''
+          if old not in s:
+              raise SystemExit("VOTOL readClassic call not found")
+          if "VOTOL TX QUERY 24B" in s:
+              print("VOTOL QUERY ALREADY PRESENT")
+          else:
+              p.write_text(s.replace(old, query, 1))
+              print("VOTOL LIVE QUERY ADDED")
+          PY
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
