@@ -8,39 +8,30 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Setup Android
         uses: android-actions/setup-android@v3
         with:
           packages: ''
-
       - name: Install Android SDK
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
-
+      - name: Patch VOTOL dashboard
+        run: python3 scripts/patch_votol_dashboard.py
       - name: Fix live charge estimate
         run: python3 -c 'from pathlib import Path; p=Path("app/src/main/java/com/votoljk/unified/MainActivity.kt"); s=p.read_text(); old="val hours = data.fullAh / amps"; new="val chargeAh = (data.fullAh - data.remainingAh).coerceAtLeast(0f)\n            val hours = chargeAh / amps"; p.write_text(s.replace(old,new,1) if old in s else s)'
-
-      - name: Add VOTOL SHOW telemetry polling
-        run: python3 -c 'import base64; from pathlib import Path; p=Path("app/src/main/java/com/votoljk/unified/MainActivity.kt"); s=p.read_text(); old=base64.b64decode("ICAgIHByaXZhdGUgZnVuIGNvbm5lY3RWb3RvbChkOiBCbHVldG9vdGhEZXZpY2UpIHsKICAgICAgICBUaHJlYWQgewogICAgICAgICAgICBydW5DYXRjaGluZyB7CiAgICAgICAgICAgICAgICBhZGFwdGVyLmNhbmNlbERpc2NvdmVyeSgpOyBydW5PblVpVGhyZWFkIHsgdm90b2xTdGF0dXMudGV4dCA9ICJDT05ORUNUSU5H4oCmIiB9CiAgICAgICAgICAgICAgICB2YWwgcyA9IGQuY3JlYXRlUmZjb21tU29ja2V0VG9TZXJ2aWNlUmVjb3JkKFNQUF9VVUlEKTsgcy5jb25uZWN0KCk7IHZvdG9sU29ja2V0ID0gcwogICAgICAgICAgICAgICAgcnVuT25VaVRocmVhZCB7IHZvdG9sU3RhdHVzLnRleHQgPSAiQ09OTkVDVEVEIjsgdm90b2xTdGF0dXMuc2V0VGV4dENvbG9yKDB4RkY0NUQ2QTMudG9JbnQoKSk7IGxvZy50ZXh0ID0gIlZPVE9MIFNQUCBjb25uZWN0ZWQ6ICR7ZC5uYW1lID86IGQuYWRkcmVzc30uIiB9CiAgICAgICAgICAgICAgICByZWFkQ2xhc3NpYyhzLmlucHV0U3RyZWFtKQogICAgICAgICAgICB9Lm9uRmFpbHVyZSB7IGUgLT4gcnVuT25VaVRocmVhZCB7IHZvdG9sU3RhdHVzLnRleHQgPSAiRVJST1IiOyBsb2cudGV4dCA9ICJWT1RPTDogJHtlLm1lc3NhZ2V9IiB9IH0KICAgICAgICB9LnN0YXJ0KCkKICAgIH0KCiAgICBwcml2YXRlIGZ1biByZWFkQ2xhc3NpYyhpbnB1dDogSW5wdXRTdHJlYW0pIHsKICAgICAgICB2YWwgYnVmID0gQnl0ZUFycmF5KDEwMjQpCiAgICAgICAgd2hpbGUgKHZvdG9sU29ja2V0Py5pc0Nvbm5lY3RlZCA9PSB0cnVlKSB7CiAgICAgICAgICAgIHZhbCBuID0gcnVuQ2F0Y2hpbmcgeyBpbnB1dC5yZWFkKGJ1ZikgfS5nZXRPckRlZmF1bHQoLTEpOyBpZiAobiA8PSAwKSBicmVhawogICAgICAgICAgICB2YWwgaGV4ID0gYnVmLmNvcHlPZihuKS5qb2luVG9TdHJpbmcoIiAiKSB7IFN0cmluZy5mb3JtYXQoIiUwMlgiLCBpdCkgfQogICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgbG9nLnRleHQgPSAiVk9UT0wgUlggJHtufUIgICRoZXgiIH0KICAgICAgICB9CiAgICB9Cg==").decode(); new=base64.b64decode("ICAgIHByaXZhdGUgdmFsIHZvdG9sUG9sbEhhbmRsZXIgPSBIYW5kbGVyKExvb3Blci5nZXRNYWluTG9vcGVyKCkpCgogICAgcHJpdmF0ZSBmdW4gY29ubmVjdFZvdG9sKGQ6IEJsdWV0b290aERldmljZSkgewogICAgICAgIFRocmVhZCB7CiAgICAgICAgICAgIHJ1bkNhdGNoaW5nIHsKICAgICAgICAgICAgICAgIGFkYXB0ZXIuY2FuY2VsRGlzY292ZXJ5KCk7IHJ1bk9uVWlUaHJlYWQgeyB2b3RvbFN0YXR1cy50ZXh0ID0gIkNPTk5FQ1RJTkfigKYiIH0KICAgICAgICAgICAgICAgIHZhbCBzID0gZC5jcmVhdGVSZmNvbW1Tb2NrZXRUb1NlcnZpY2VSZWNvcmQoU1BQX1VVSUQpOyBzLmNvbm5lY3QoKTsgdm90b2xTb2NrZXQgPSBzCiAgICAgICAgICAgICAgICBydW5PblVpVGhyZWFkIHsgdm90b2xTdGF0dXMudGV4dCA9ICJDT05ORUNURUQiOyB2b3RvbFN0YXR1cy5zZXRUZXh0Q29sb3IoMHhGRjQ1RDZBMy50b0ludCgpKTsgbG9nLnRleHQgPSAiVk9UT0wgU1BQIGNvbm5lY3RlZDogJHtkLm5hbWUgPzogZC5hZGRyZXNzfS4gU0hPVyBwb2xsaW5nIGFjdGl2ZS4iIH0KICAgICAgICAgICAgICAgIHN0YXJ0Vm90b2xQb2xsaW5nKHMpCiAgICAgICAgICAgICAgICByZWFkQ2xhc3NpYyhzLmlucHV0U3RyZWFtKQogICAgICAgICAgICB9Lm9uRmFpbHVyZSB7IGUgLT4gcnVuT25VaVRocmVhZCB7IHZvdG9sU3RhdHVzLnRleHQgPSAiRVJST1IiOyBsb2cudGV4dCA9ICJWT1RPTDogJHtlLm1lc3NhZ2V9IiB9IH0KICAgICAgICB9LnN0YXJ0KCkKICAgIH0KCiAgICBwcml2YXRlIGZ1biBjcmVhdGVWb3RvbFNob3dQYWNrZXQoKTogQnl0ZUFycmF5IHsKICAgICAgICB2YWwgcCA9IEJ5dGVBcnJheSgyNCkKICAgICAgICBwWzBdID0gMHhDOS50b0J5dGUoKTsgcFsxXSA9IDB4MTQudG9CeXRlKCk7IHBbMl0gPSAweDBELnRvQnl0ZSgpCiAgICAgICAgcFszXSA9ICdTJy5jb2RlLnRvQnl0ZSgpOyBwWzRdID0gJ0gnLmNvZGUudG9CeXRlKCk7IHBbNV0gPSAnTycuY29kZS50b0J5dGUoKTsgcFs2XSA9ICdXJy5jb2RlLnRvQnl0ZSgpCiAgICAgICAgdmFyIHhvciA9IDAKICAgICAgICBmb3IgKGkgaW4gMC4uMjEpIHhvciA9IHhvciB4b3IgKHBbaV0udG9JbnQoKSBhbmQgMHhGRikKICAgICAgICBwWzIyXSA9IHhvci50b0J5dGUoKTsgcFsyM10gPSAweDBELnRvQnl0ZSgpCiAgICAgICAgcmV0dXJuIHAKICAgIH0KCiAgICBwcml2YXRlIGZ1biBzdGFydFZvdG9sUG9sbGluZyhzb2NrZXQ6IEJsdWV0b290aFNvY2tldCkgewogICAgICAgIHZvdG9sUG9sbEhhbmRsZXIucmVtb3ZlQ2FsbGJhY2tzQW5kTWVzc2FnZXMobnVsbCkKICAgICAgICB2YWwgcG9sbCA9IG9iamVjdCA6IFJ1bm5hYmxlIHsKICAgICAgICAgICAgb3ZlcnJpZGUgZnVuIHJ1bigpIHsKICAgICAgICAgICAgICAgIGlmICh2b3RvbFNvY2tldCA9PT0gc29ja2V0ICYmIHNvY2tldC5pc0Nvbm5lY3RlZCkgewogICAgICAgICAgICAgICAgICAgIHJ1bkNhdGNoaW5nIHsKICAgICAgICAgICAgICAgICAgICAgICAgdmFsIHBhY2tldCA9IGNyZWF0ZVZvdG9sU2hvd1BhY2tldCgpCiAgICAgICAgICAgICAgICAgICAgICAgIHNvY2tldC5vdXRwdXRTdHJlYW0ud3JpdGUocGFja2V0KTsgc29ja2V0Lm91dHB1dFN0cmVhbS5mbHVzaCgpCiAgICAgICAgICAgICAgICAgICAgICAgIHZhbCBoZXggPSBwYWNrZXQuam9pblRvU3RyaW5nKCIgIikgeyBTdHJpbmcuZm9ybWF0KCIlMDJYIiwgaXQpIH0KICAgICAgICAgICAgICAgICAgICAgICAgcnVuT25VaVRocmVhZCB7IGxvZy5hcHBlbmQoIlxuVk9UT0wgVFggJHtwYWNrZXQuc2l6ZX1CICAkaGV4IikgfQogICAgICAgICAgICAgICAgICAgIH0ub25GYWlsdXJlIHsgZSAtPiBydW5PblVpVGhyZWFkIHsgbG9nLmFwcGVuZCgiXG5WT1RPTCBUWCBFUlJPUjogJHtlLm1lc3NhZ2V9IikgfSB9CiAgICAgICAgICAgICAgICAgICAgdm90b2xQb2xsSGFuZGxlci5wb3N0RGVsYXllZCh0aGlzLCA3MDApCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICAgICAgdm90b2xQb2xsSGFuZGxlci5wb3N0KHBvbGwpCiAgICB9CgogICAgcHJpdmF0ZSBmdW4gcmVhZENsYXNzaWMoaW5wdXQ6IElucHV0U3RyZWFtKSB7CiAgICAgICAgdmFsIGJ1ZiA9IEJ5dGVBcnJheSgxMDI0KQogICAgICAgIHdoaWxlICh2b3RvbFNvY2tldD8uaXNDb25uZWN0ZWQgPT0gdHJ1ZSkgewogICAgICAgICAgICB2YWwgbiA9IHJ1bkNhdGNoaW5nIHsgaW5wdXQucmVhZChidWYpIH0uZ2V0T3JEZWZhdWx0KC0xKTsgaWYgKG4gPD0gMCkgYnJlYWsKICAgICAgICAgICAgdmFsIGRhdGEgPSBidWYuY29weU9mKG4pCiAgICAgICAgICAgIHZhbCBoZXggPSBkYXRhLmpvaW5Ub1N0cmluZygiICIpIHsgU3RyaW5nLmZvcm1hdCgiJTAyWCIsIGl0KSB9CiAgICAgICAgICAgIHJ1bk9uVWlUaHJlYWQgeyBsb2cuYXBwZW5kKCJcblZPVE9MIFJYICR7bn1CICAkaGV4IikgfQogICAgICAgIH0KICAgIH0K").decode(); assert old in s, "VOTOL block not found"; p.write_text(s.replace(old,new,1)); print("VOTOL SHOW POLLING PATCHED")'
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-
       - name: Build APK
         run: gradle assembleDebug
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
