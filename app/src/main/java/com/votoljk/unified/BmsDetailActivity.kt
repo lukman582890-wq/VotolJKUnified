@@ -18,9 +18,37 @@ class BmsDetailActivity : Activity() {
     private val white = Color.WHITE
     private val handler = Handler(Looper.getMainLooper())
 
+    private lateinit var powerRow: TextView
+    private lateinit var capacityRow: TextView
+    private lateinit var remainingRow: TextView
+    private lateinit var mosRow: TextView
+    private lateinit var t1Row: TextView
+    private lateinit var t2Row: TextView
+    private lateinit var emergencyRow: TextView
+    private lateinit var sleepRow: TextView
+    private lateinit var alarmRow: TextView
+    private lateinit var typeRow: TextView
+    private lateinit var averageRow: TextView
+    private lateinit var deltaRow: TextView
+    private lateinit var balanceRow: TextView
+    private lateinit var cyclesRow: TextView
+    private lateinit var cycleAhRow: TextView
+    private lateinit var chargerRow: TextView
+    private lateinit var balancerRow: TextView
+    private lateinit var batteryVoltageRow: TextView
+    private lateinit var batteryCurrentRow: TextView
+    private lateinit var batteryPowerRow: TextView
+    private lateinit var protectionRow: TextView
+    private lateinit var chargeMosRow: TextView
+    private lateinit var dischargeMosRow: TextView
+    private lateinit var statusRow: TextView
+    private lateinit var detailsRow: TextView
+    private val cellRows = ArrayList<TextView>()
+    private val resistanceRows = ArrayList<TextView>()
+
     private val refresh = object : Runnable {
         override fun run() {
-            renderLiveData()
+            updateFromStore()
             handler.postDelayed(this, 500)
         }
     }
@@ -38,95 +66,93 @@ class BmsDetailActivity : Activity() {
         root.addView(subtitle("20S LFP BATTERY SYSTEM"))
         root.addView(section("REAL-TIME"))
 
-        val power = addRow(root, "Battery Power", "-- W")
-        val capacity = addRow(root, "Capacity", "-- Ah")
-        val remaining = addRow(root, "Remaining Capacity", "-- Ah")
-        val mos = addRow(root, "MOS / CMOS Temp", "-- °C")
-        val t1 = addRow(root, "Battery T1", "-- °C")
-        val t2 = addRow(root, "Battery T2", "-- °C")
-        val emergency = addRow(root, "Emergency Timer", "-- s")
-        val sleep = addRow(root, "Sleep Timer", "-- s")
-        val alarm = addRow(root, "LCD Alarm", "--")
-        val type = addRow(root, "Cell Type", "LFP")
-        val average = addRow(root, "Cell Average", "-- V")
-        val delta = addRow(root, "Voltage Difference", "-- V")
-        val balance = addRow(root, "Balance Current", "-- A")
-        val cycles = addRow(root, "Cycle Count", "--")
-        val cycleAh = addRow(root, "Cycle Capacity", "-- Ah")
-        val charger = addRow(root, "Charger Status", "--")
-        val balancer = addRow(root, "Balancer", "--")
+        powerRow = addRow(root, "Battery Power", "-- W")
+        capacityRow = addRow(root, "Capacity", "-- Ah")
+        remainingRow = addRow(root, "Remaining Capacity", "-- Ah")
+        mosRow = addRow(root, "MOS / CMOS Temp", "-- °C")
+        t1Row = addRow(root, "Battery T1", "-- °C")
+        t2Row = addRow(root, "Battery T2", "-- °C")
+        emergencyRow = addRow(root, "Emergency Timer", "-- s")
+        sleepRow = addRow(root, "Sleep Timer", "-- s")
+        alarmRow = addRow(root, "LCD Alarm", "--")
+        typeRow = addRow(root, "Cell Type", "LFP")
+        averageRow = addRow(root, "Cell Average", "-- V")
+        deltaRow = addRow(root, "Voltage Difference", "-- V")
+        balanceRow = addRow(root, "Balance Current", "-- A")
+        cyclesRow = addRow(root, "Cycle Count", "--")
+        cycleAhRow = addRow(root, "Cycle Capacity", "-- Ah")
+        chargerRow = addRow(root, "Charger Status", "--")
+        balancerRow = addRow(root, "Balancer", "--")
 
-        val batteryVoltage = run { root.addView(section("BATTERY")); addRow(root, "Battery Voltage", "-- V", cyan) }
-        val batteryCurrent = addRow(root, "Battery Current", "-- A", cyan)
-        val batteryPower = addRow(root, "Battery Power", "-- W", cyan)
+        root.addView(section("BATTERY"))
+        batteryVoltageRow = addRow(root, "Battery Voltage", "-- V", cyan)
+        batteryCurrentRow = addRow(root, "Battery Current", "-- A", cyan)
+        batteryPowerRow = addRow(root, "Battery Power", "-- W", cyan)
 
         root.addView(section("CELL VOLTAGES"))
-        val cellRows = (1..20).map { addRow(root, "Cell %02d".format(it), "-- V", cyan) }
+        for (i in 1..20) cellRows.add(addRow(root, "Cell %02d".format(i), "-- V", cyan))
 
         root.addView(section("BALANCE WIRE RESISTANCE"))
-        val resistanceRows = (1..20).map { addRow(root, "Cell %02d".format(it), "-- Ω", green) }
+        for (i in 1..20) resistanceRows.add(addRow(root, "Cell %02d".format(i), "-- Ω", green))
 
         root.addView(section("ALARMS / PROTECTION"))
-        val protection = addRow(root, "Protection Status", "--")
-        val chargeMos = addRow(root, "Charge MOS", "--")
-        val dischargeMos = addRow(root, "Discharge MOS", "--")
-        val status = addRow(root, "BMS Status", "WAITING FOR DATA", gray)
+        protectionRow = addRow(root, "Protection Status", "--")
+        chargeMosRow = addRow(root, "Charge MOS", "--")
+        dischargeMosRow = addRow(root, "Discharge MOS", "--")
+        statusRow = addRow(root, "BMS Status", "WAITING FOR DATA", gray)
 
         root.addView(section("DETAILS LOG"))
-        val details = addRow(root, "JK BMS data", "Belum ada data diterima", gray)
+        detailsRow = addRow(root, "JK BMS data", "Belum ada data diterima", gray)
 
         scroll.addView(root)
         setContentView(scroll)
-
-        fun update() {
-            val d = JkBmsDataStore.latest ?: return
-            val min = d.cellVoltages.minOrNull() ?: 0f
-            val max = d.cellVoltages.maxOrNull() ?: 0f
-            val avg = if (d.cellVoltages.isEmpty()) 0f else d.cellVoltages.average().toFloat()
-            val diff = max - min
-
-            setValue(power, "Battery Power", "%.0f W".format(Locale.US, d.power))
-            setValue(capacity, "Capacity", "%.3f Ah".format(Locale.US, d.fullAh))
-            setValue(remaining, "Remaining Capacity", "%.3f Ah".format(Locale.US, d.remainingAh))
-            setValue(mos, "MOS / CMOS Temp", "%.1f °C".format(Locale.US, d.mosTemp))
-            setValue(t1, "Battery T1", "%.1f °C".format(Locale.US, d.temp1))
-            setValue(t2, "Battery T2", "%.1f °C".format(Locale.US, d.temp2))
-            setValue(emergency, "Emergency Timer", "%d s".format(d.emergencySeconds))
-            setValue(sleep, "Sleep Timer", "%d s".format(d.sleepSeconds))
-            setValue(alarm, "LCD Alarm", "NORMAL")
-            setValue(type, "Cell Type", d.batteryType)
-            setValue(average, "Cell Average", "%.3f V".format(Locale.US, avg))
-            setValue(delta, "Voltage Difference", "%.3f V".format(Locale.US, diff))
-            setValue(balance, "Balance Current", "%.3f A".format(Locale.US, d.balanceCurrent))
-            setValue(cycles, "Cycle Count", "%d".format(d.cycleCount))
-            setValue(cycleAh, "Cycle Capacity", "%.3f Ah".format(Locale.US, d.cycleCapacityAh))
-            setValue(charger, "Charger Status", if (d.chargeStatus != 0) "ON" else "OFF")
-            setValue(balancer, "Balancer", if (d.balancer || d.balanceOn) "ON" else "OFF")
-            setValue(batteryVoltage, "Battery Voltage", "%.3f V".format(Locale.US, d.totalVoltage))
-            setValue(batteryCurrent, "Battery Current", "%.3f A".format(Locale.US, d.current))
-            setValue(batteryPower, "Battery Power", "%.0f W".format(Locale.US, d.power))
-            setValue(protection, "Protection Status", if (d.emergencySeconds > 0) "ACTIVE" else "NORMAL")
-            setValue(chargeMos, "Charge MOS", if (d.chargeMos) "ON" else "OFF")
-            setValue(dischargeMos, "Discharge MOS", if (d.dischargeMos) "ON" else "OFF")
-            setValue(status, "BMS Status", "ONLINE • ${d.cellCount}S • SOH ${d.soh}%")
-            setValue(details, "JK BMS data", "LIVE • SOC ${d.soc}% • %.3f V • %.3f A".format(Locale.US, d.totalVoltage, d.current))
-
-            cellRows.forEachIndexed { i, row ->
-                val v = d.cellVoltages.getOrNull(i)
-                setValue(row, "Cell %02d".format(i + 1), if (v == null) "-- V" else "%.3f V".format(Locale.US, v))
-            }
-            resistanceRows.forEachIndexed { i, row ->
-                val v = d.cellResistances.getOrNull(i)
-                setValue(row, "Cell %02d".format(i + 1), if (v == null) "-- Ω" else "%.3f Ω".format(Locale.US, v))
-            }
-        }
-
-        renderLiveData = update
-        update()
+        updateFromStore()
         handler.post(refresh)
     }
 
-    private lateinit var renderLiveData: () -> Unit
+    private fun updateFromStore() {
+        val d = JkBmsDataStore.latest ?: return
+        val min = d.cellVoltages.minOrNull() ?: 0f
+        val max = d.cellVoltages.maxOrNull() ?: 0f
+        val avg = if (d.cellVoltages.isEmpty()) 0f else d.cellVoltages.average().toFloat()
+        val diff = max - min
+
+        setValue(powerRow, "Battery Power", "%.0f W".format(Locale.US, d.power))
+        setValue(capacityRow, "Capacity", "%.3f Ah".format(Locale.US, d.fullAh))
+        setValue(remainingRow, "Remaining Capacity", "%.3f Ah".format(Locale.US, d.remainingAh))
+        setValue(mosRow, "MOS / CMOS Temp", "%.1f °C".format(Locale.US, d.mosTemp))
+        setValue(t1Row, "Battery T1", "%.1f °C".format(Locale.US, d.temp1))
+        setValue(t2Row, "Battery T2", "%.1f °C".format(Locale.US, d.temp2))
+        setValue(emergencyRow, "Emergency Timer", "%d s".format(d.emergencySeconds))
+        setValue(sleepRow, "Sleep Timer", "%d s".format(d.sleepSeconds))
+        setValue(alarmRow, "LCD Alarm", "NORMAL")
+        setValue(typeRow, "Cell Type", d.batteryType)
+        setValue(averageRow, "Cell Average", "%.3f V".format(Locale.US, avg))
+        setValue(deltaRow, "Voltage Difference", "%.3f V".format(Locale.US, diff))
+        setValue(balanceRow, "Balance Current", "%.3f A".format(Locale.US, d.balanceCurrent))
+        setValue(cyclesRow, "Cycle Count", "%d".format(d.cycleCount))
+        setValue(cycleAhRow, "Cycle Capacity", "%.3f Ah".format(Locale.US, d.cycleCapacityAh))
+        setValue(chargerRow, "Charger Status", if (d.chargeStatus != 0) "ON" else "OFF")
+        setValue(balancerRow, "Balancer", if (d.balancer || d.balanceOn) "ON" else "OFF")
+
+        setValue(batteryVoltageRow, "Battery Voltage", "%.3f V".format(Locale.US, d.totalVoltage))
+        setValue(batteryCurrentRow, "Battery Current", "%.3f A".format(Locale.US, d.current))
+        setValue(batteryPowerRow, "Battery Power", "%.0f W".format(Locale.US, d.power))
+        setValue(protectionRow, "Protection Status", if (d.emergencySeconds > 0) "ACTIVE" else "NORMAL")
+        setValue(chargeMosRow, "Charge MOS", if (d.chargeMos) "ON" else "OFF")
+        setValue(dischargeMosRow, "Discharge MOS", if (d.dischargeMos) "ON" else "OFF")
+        setValue(statusRow, "BMS Status", "ONLINE • ${d.cellCount}S • SOH ${d.soh}%")
+        setValue(detailsRow, "JK BMS data", "LIVE • SOC ${d.soc}% • %.3f V • %.3f A".format(Locale.US, d.totalVoltage, d.current))
+
+        cellRows.forEachIndexed { i, row ->
+            val v = d.cellVoltages.getOrNull(i)
+            setValue(row, "Cell %02d".format(i + 1), if (v == null) "-- V" else "%.3f V".format(Locale.US, v))
+        }
+        resistanceRows.forEachIndexed { i, row ->
+            val v = d.cellResistances.getOrNull(i)
+            setValue(row, "Cell %02d".format(i + 1), if (v == null) "-- Ω" else "%.3f Ω".format(Locale.US, v))
+        }
+    }
 
     private fun addRow(root: LinearLayout, label: String, value: String, color: Int = white): TextView {
         val v = row(label, value, color)
@@ -134,8 +160,8 @@ class BmsDetailActivity : Activity() {
         return v
     }
 
-    private fun setValue(row: TextView?, label: String, value: String) {
-        row?.text = "$label    $value"
+    private fun setValue(row: TextView, label: String, value: String) {
+        row.text = "$label    $value"
     }
 
     private fun title(text: String) = TextView(this).apply {
