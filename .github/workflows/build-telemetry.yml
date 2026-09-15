@@ -1,0 +1,106 @@
+name: Build Telemetry APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Setup Android
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+      - name: Install Android SDK
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
+      - name: Patch MainActivity telemetry
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/com/votoljk/unified/MainActivity.kt')
+          s=p.read_text()
+          start=s.index('    private fun connectVotol')
+          end=s.index('    private var scanner:', start)
+          block=r'''    private val votolPollHandler = Handler(Looper.getMainLooper())
+
+    private fun connectVotol(d: BluetoothDevice) {
+        Thread {
+            runCatching {
+                adapter.cancelDiscovery(); runOnUiThread { votolStatus.text = "CONNECTING…" }
+                val s = d.createRfcommSocketToServiceRecord(SPP_UUID); s.connect(); votolSocket = s
+                runOnUiThread { votolStatus.text = "CONNECTED"; votolStatus.setTextColor(0xFF45D6A3.toInt()); log.text = "VOTOL SPP connected: ${d.name ?: d.address}. SHOW polling active." }
+                startVotolPolling(s)
+                readClassic(s.inputStream)
+            }.onFailure { e -> runOnUiThread { votolStatus.text = "ERROR"; log.text = "VOTOL: ${e.message}" } }
+        }.start()
+    }
+
+    private fun createVotolShowPacket(): ByteArray {
+        val p = ByteArray(24)
+        p[0] = 0xC9.toByte(); p[1] = 0x14.toByte(); p[2] = 0x0D.toByte()
+        p[3] = 'S'.code.toByte(); p[4] = 'H'.code.toByte(); p[5] = 'O'.code.toByte(); p[6] = 'W'.code.toByte()
+        var xor = 0
+        for (i in 0..21) xor = xor xor (p[i].toInt() and 0xFF)
+        p[22] = xor.toByte(); p[23] = 0x0D.toByte()
+        return p
+    }
+
+    private fun startVotolPolling(socket: BluetoothSocket) {
+        votolPollHandler.removeCallbacksAndMessages(null)
+        val poll = object : Runnable {
+            override fun run() {
+                if (votolSocket === socket && socket.isConnected) {
+                    runCatching { socket.outputStream.write(createVotolShowPacket()); socket.outputStream.flush() }
+                    votolPollHandler.postDelayed(this, 700)
+                }
+            }
+        }
+        votolPollHandler.post(poll)
+    }
+
+    private fun readClassic(input: InputStream) {
+        val buf = ByteArray(1024)
+        while (votolSocket?.isConnected == true) {
+            val n = runCatching { input.read(buf) }.getOrDefault(-1); if (n <= 0) break
+            val data = buf.copyOf(n)
+            val hex = data.joinToString(" ") { String.format("%02X", it) }
+            val telemetry = VotolTelemetryParser.parse(data)
+            runOnUiThread {
+                log.append("\nVOTOL RX ${n}B  $hex")
+                telemetry?.let { t ->
+                    findViewById<TextView>(R.id.votolTelemetryValue).text = "Motor RPM    ${t.rpm}\nController  %.1f V / %.1f A / %.0f W\nStatus      ${t.status}   Gear ${t.gear}\nFault       0x%08X".format(t.voltage, t.current, t.voltage * t.current, t.faultMask)
+                    findViewById<TextView>(R.id.systemTempValues).text = "Controller     ${t.controllerTemp} °C\n\nMotor              ${t.motorTemp} °C\n\nBattery            -- °C"
+                }
+            }
+        }
+    }
+
+'''
+          p.write_text(s[:start]+block+s[end:])
+          q=Path('app/src/main/res/layout/activity_main.xml')
+          x=q.read_text()
+          old='android:text="Motor RPM\n0\n\nPhase Current\n0.0 A\n\nThrottle\n0 %"'
+          new='android:id="@+id/votolTelemetryValue" android:text="Motor RPM    --\nController  -- V / -- A / -- W\nStatus      --\nFault       --"'
+          assert old in x, 'telemetry UI block not found'
+          q.write_text(x.replace(old,new,1))
+          PY
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build APK
+        run: gradle assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VotolJKUnified-Telemetry-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
