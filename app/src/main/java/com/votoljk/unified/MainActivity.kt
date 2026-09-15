@@ -173,8 +173,8 @@ handler.postDelayed({
 handler.postDelayed({
     sendJkCommand(g, 0x97)
 }, 5000)}else{jkStatus.text="DISCONNECTED";jkStatus.setTextColor(0xFFFFB86B.toInt())}}};override fun onCharacteristicChanged(g:BluetoothGatt,c:BluetoothGattCharacteristic){
-        appendJkRxChunk(characteristic.value ?: ByteArray(0))
 val data=c.value ?: return
+        appendJkRxChunk(data)
 val hex=data.joinToString(" "){ "%02X".format(it.toInt() and 0xFF) }
 runOnUiThread{log.append("\\nJK RX [${c.uuid}] $hex\\n")}
 };
