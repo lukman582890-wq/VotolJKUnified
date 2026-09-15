@@ -428,35 +428,45 @@ private fun allTextViews(v: android.view.View): List<android.widget.TextView> {
 private fun updateJkDashboard(data: JkBmsData) {
     val views = allTextViews(findViewById(android.R.id.content))
 
-    views.firstOrNull {
-        it.text.toString().contains("%") &&
-        it.text.toString().contains("--")
-    }?.text = "${data.soc} %"
-
-    views.firstOrNull {
-        it.text.toString().contains("V") &&
-        it.text.toString().contains("--")
-    }?.text = "%.3f V".format(data.totalVoltage)
-
-    views.firstOrNull {
-        it.text.toString() == "0.0 A"
-    }?.text = "%.3f A".format(data.current)
-
-    views.firstOrNull {
-        it.text.toString() == "0 W"
-    }?.text = "%.0f W".format(data.power)
-
     val delta = if (data.cellVoltages.isNotEmpty()) {
         data.cellVoltages.maxOrNull()!! - data.cellVoltages.minOrNull()!!
     } else 0f
 
-    views.firstOrNull {
-        it.text.toString() == "0.000 V"
-    }?.text = "%.3f V".format(delta)
+    // Update every matching dashboard value, not only the first one.
+    views.filter {
+        it.text.toString().contains("%") ||
+        it.text.toString().contains("-- %")
+    }.forEach {
+        val t = it.text.toString()
+        if (t.contains("%") && (t.contains("--") || t.matches(Regex("\\d+.*%")))) {
+            it.text = "${data.soc} %"
+        }
+    }
 
-    views.firstOrNull {
-        it.text.toString().contains("°C")
-    }?.text = "%.1f °C".format(data.temp1)
+    views.filter {
+        it.text.toString().contains("V")
+    }.forEach {
+        val t = it.text.toString()
+        if (t.contains("--.-") || t.contains("-- V") || t.contains("0.000 V")) {
+            if (t.contains("V")) it.text = "%.3f V".format(data.totalVoltage)
+        }
+    }
+
+    // Battery System values are identified by their original value format.
+    views.filter { it.text.toString().trim() == "0.0 A" }
+        .forEach { it.text = "%.3f A".format(data.current) }
+
+    views.filter { it.text.toString().trim() == "0 W" }
+        .forEach { it.text = "%.0f W".format(data.power) }
+
+    views.filter { it.text.toString().trim() == "0.000 V" }
+        .forEach { it.text = "%.3f V".format(delta) }
+
+    views.filter { it.text.toString().contains("°C") }
+        .forEach {
+            val t = it.text.toString()
+            if (t.contains("--")) it.text = "%.1f °C".format(data.temp1)
+        }
 
     log.append(
         "\nJK DATA: %dS | %.3fV | %.3fA | %.0fW | SOC %d%% | Δ %.3fV | T %.1f°C\n".format(
