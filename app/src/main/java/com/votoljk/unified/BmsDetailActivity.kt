@@ -3,8 +3,6 @@ package com.votoljk.unified
 import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -16,17 +14,15 @@ class BmsDetailActivity : Activity() {
     private val green = Color.rgb(0, 245, 140)
     private val gray = Color.rgb(145, 164, 197)
     private val white = Color.WHITE
-    private val handler = Handler(Looper.getMainLooper())
-
-    private val rows = ArrayList<Pair<String, TextView>>()
-    private val cellRows = ArrayList<TextView>()
-    private val resistanceRows = ArrayList<TextView>()
-    private var liveTask: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(5, 8, 14)) }
+        val scroll = ScrollView(this).apply {
+            setBackgroundColor(Color.rgb(5, 8, 14))
+            isFillViewport = true
+        }
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(16, 20, 16, 30)
@@ -60,10 +56,10 @@ class BmsDetailActivity : Activity() {
         val batteryPower = addRow(root, "Battery Power", "-- W", cyan)
 
         root.addView(section("CELL VOLTAGES"))
-        for (i in 1..20) cellRows.add(addRow(root, "Cell %02d".format(i), "-- V", cyan))
+        val cellRows = (1..20).map { addRow(root, "Cell %02d".format(Locale.US, it), "-- V", cyan) }
 
         root.addView(section("BALANCE WIRE RESISTANCE"))
-        for (i in 1..20) resistanceRows.add(addRow(root, "Cell %02d".format(i), "-- Ω", green))
+        val resistanceRows = (1..20).map { addRow(root, "Cell %02d".format(Locale.US, it), "-- Ω", green) }
 
         root.addView(section("ALARMS / PROTECTION"))
         val protection = addRow(root, "Protection Status", "--")
@@ -74,13 +70,16 @@ class BmsDetailActivity : Activity() {
         root.addView(section("DETAILS LOG"))
         val details = addRow(root, "JK BMS data", "Belum ada data diterima", gray)
 
-        setContentView(scroll.apply { addView(root) })
+        scroll.addView(root)
+        setContentView(scroll)
 
-        fun update() {
-            val d = JkBmsDataStore.latest ?: run {
+        fun render() {
+            val d = JkBmsDataStore.latest
+            if (d == null) {
                 setValue(status, "BMS Status", "WAITING FOR DATA")
                 return
             }
+
             val min = d.cellVoltages.minOrNull() ?: 0f
             val max = d.cellVoltages.maxOrNull() ?: 0f
             val avg = if (d.cellVoltages.isEmpty()) 0f else d.cellVoltages.average().toFloat()
@@ -114,28 +113,20 @@ class BmsDetailActivity : Activity() {
 
             cellRows.forEachIndexed { i, row ->
                 val v = d.cellVoltages.getOrNull(i)
-                setValue(row, "Cell %02d".format(i + 1), if (v == null) "-- V" else "%.3f V".format(Locale.US, v))
+                setValue(row, "Cell %02d".format(Locale.US, i + 1), if (v == null) "-- V" else "%.3f V".format(Locale.US, v))
             }
             resistanceRows.forEachIndexed { i, row ->
                 val v = d.cellResistances.getOrNull(i)
-                setValue(row, "Cell %02d".format(i + 1), if (v == null) "-- Ω" else "%.3f Ω".format(Locale.US, v))
+                setValue(row, "Cell %02d".format(Locale.US, i + 1), if (v == null) "-- Ω" else "%.3f Ω".format(Locale.US, v))
             }
         }
 
-        update()
-        liveTask = object : Runnable {
-            override fun run() {
-                update()
-                handler.postDelayed(this, 500)
-            }
-        }
-        handler.post(liveTask!!)
+        render()
     }
 
     private fun addRow(root: LinearLayout, label: String, value: String, color: Int = white): TextView {
         val v = row(label, value, color)
         root.addView(v)
-        rows.add(label to v)
         return v
     }
 
@@ -174,11 +165,5 @@ class BmsDetailActivity : Activity() {
         setTextColor(valueColor)
         setPadding(12, 11, 12, 11)
         setBackgroundColor(Color.rgb(12, 17, 27))
-    }
-
-    override fun onDestroy() {
-        liveTask?.let { handler.removeCallbacks(it) }
-        liveTask = null
-        super.onDestroy()
     }
 }
