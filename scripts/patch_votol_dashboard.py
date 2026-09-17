@@ -128,8 +128,8 @@ for layout_path in [
 ]:
     x = layout_path.read_text()
     if 'android:id="@+id/votolTelemetryValue"' not in x:
-        pattern = r'(<TextView\\b(?=[^>]*android:text="Motor RPM)[^>]*?)(\\bandroid:text="Motor RPM)'
-        x, count = re.subn(pattern, r'\\1android:id="@+id/votolTelemetryValue" \\2', x, count=1)
+        pattern = r'(<TextView\b(?=[^>]*android:text="Motor RPM)[^>]*?)(\bandroid:text="Motor RPM)'
+        x, count = re.subn(pattern, r'\1android:id="@+id/votolTelemetryValue" \2', x, count=1)
         if count != 1:
             raise SystemExit(f'VOTOL telemetry TextView not found in {layout_path}')
 
@@ -149,7 +149,6 @@ for layout_path in [
             tag = x[pos:end_tag]
             if 'android:visibility=' not in tag:
                 x = x[:pos] + tag + ' android:visibility="gone"' + x[end_tag:]
-
     try:
         ET.fromstring(x)
     except ET.ParseError as exc:
