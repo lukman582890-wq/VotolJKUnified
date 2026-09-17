@@ -140,14 +140,7 @@ for layout_path in [
                   'android:layout_height="52dp" android:layout_marginTop="6dp" android:background="#080D13"')
     x = x.replace('android:layout_height="155dp" android:layout_weight="1"',
                   'android:layout_height="132dp" android:layout_weight="1"')
-    for marker_id in ('votolDevices', 'jkDevices'):
-        token = f'android:id="@+id/{marker_id}"'
-        pos = x.find(token)
-        if pos >= 0:
-            end_tag = x.find('>', pos)
-            tag = x[pos:end_tag]
-            if 'android:visibility=' not in tag:
-                x = x[:pos] + tag + ' android:visibility="gone"' + x[end_tag:]
+
     try:
         ET.fromstring(x)
     except ET.ParseError as exc:
