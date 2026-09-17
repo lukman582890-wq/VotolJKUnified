@@ -123,9 +123,10 @@ main.write_text(s[:start] + block + s[end:])
 xml = Path('app/src/main/res/layout/activity_main.xml')
 x = xml.read_text()
 if 'android:id="@+id/votolTelemetryValue"' not in x:
-    old = 'android:text="Motor RPM\\n0\\n\\nPhase Current\\n0.0 A\\n\\nThrottle\\n0 %"'
-    new = 'android:id="@+id/votolTelemetryValue" android:text="Motor RPM    --\\nController  -- V / -- A / -- W\\nSpeed       -- km/h\\nStatus      --\\nFault       --"'
-    if old not in x:
-        raise SystemExit('VOTOL telemetry TextView text block not found')
-    xml.write_text(x.replace(old, new, 1))
+    marker = 'android:text="Motor RPM'
+    pos = x.find(marker)
+    if pos < 0:
+        raise SystemExit('VOTOL telemetry TextView not found in activity_main.xml')
+    x = x[:pos] + 'android:id="@+id/votolTelemetryValue" ' + x[pos:]
+    xml.write_text(x)
 print('VOTOL DASHBOARD PATCHED')
