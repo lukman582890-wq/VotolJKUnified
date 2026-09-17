@@ -1,4 +1,6 @@
 from pathlib import Path
+import re
+import xml.etree.ElementTree as ET
 
 main = Path('app/src/main/java/com/votoljk/unified/MainActivity.kt')
 s = main.read_text()
@@ -126,13 +128,11 @@ for layout_path in [
 ]:
     x = layout_path.read_text()
     if 'android:id="@+id/votolTelemetryValue"' not in x:
-        marker = 'android:text="Motor RPM'
-        pos = x.find(marker)
-        if pos < 0:
+        pattern = r'(<TextView\\b(?=[^>]*android:text="Motor RPM)[^>]*?)(\\bandroid:text="Motor RPM)'
+        x, count = re.subn(pattern, r'\\1android:id="@+id/votolTelemetryValue" \\2', x, count=1)
+        if count != 1:
             raise SystemExit(f'VOTOL telemetry TextView not found in {layout_path}')
-        x = x[:pos] + 'android:id="@+id/votolTelemetryValue" ' + x[pos:]
 
-    # Keep the existing working dashboard structure while removing the large black speed overlay.
     x = x.replace('android:layout_width="270dp" android:layout_height="270dp" android:layout_marginTop="8dp"',
                   'android:layout_width="250dp" android:layout_height="250dp" android:layout_marginTop="4dp"')
     x = x.replace('<View android:layout_width="242dp" android:layout_height="242dp" android:layout_gravity="center" android:background="#070B0F" />', '')
@@ -141,5 +141,18 @@ for layout_path in [
                   'android:layout_height="52dp" android:layout_marginTop="6dp" android:background="#080D13"')
     x = x.replace('android:layout_height="155dp" android:layout_weight="1"',
                   'android:layout_height="132dp" android:layout_weight="1"')
+    for marker_id in ('votolDevices', 'jkDevices'):
+        token = f'android:id="@+id/{marker_id}"'
+        pos = x.find(token)
+        if pos >= 0:
+            end_tag = x.find('>', pos)
+            tag = x[pos:end_tag]
+            if 'android:visibility=' not in tag:
+                x = x[:pos] + tag + ' android:visibility="gone"' + x[end_tag:]
+
+    try:
+        ET.fromstring(x)
+    except ET.ParseError as exc:
+        raise SystemExit(f'Malformed dashboard XML in {layout_path}: {exc}')
     layout_path.write_text(x)
 print('VOTOL DASHBOARD PATCHED')
