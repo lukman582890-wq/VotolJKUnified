@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 import xml.etree.ElementTree as ET
 
 main = Path('app/src/main/java/com/votoljk/unified/MainActivity.kt')
@@ -128,10 +127,10 @@ for layout_path in [
 ]:
     x = layout_path.read_text()
     if 'android:id="@+id/votolTelemetryValue"' not in x:
-        pattern = r'(<TextView\b(?=[^>]*android:text="Motor RPM)[^>]*?)(\bandroid:text="Motor RPM)'
-        x, count = re.subn(pattern, r'\1android:id="@+id/votolTelemetryValue" \2', x, count=1)
-        if count != 1:
+        marker = 'android:fontFamily="monospace" android:text="Motor RPM'
+        if marker not in x:
             raise SystemExit(f'VOTOL telemetry TextView not found in {layout_path}')
+        x = x.replace(marker, 'android:id="@+id/votolTelemetryValue" ' + marker, 1)
 
     x = x.replace('android:layout_width="270dp" android:layout_height="270dp" android:layout_marginTop="8dp"',
                   'android:layout_width="250dp" android:layout_height="250dp" android:layout_marginTop="4dp"')
