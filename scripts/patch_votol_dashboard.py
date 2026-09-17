@@ -131,5 +131,24 @@ for layout_path in [
         if pos < 0:
             raise SystemExit(f'VOTOL telemetry TextView not found in {layout_path}')
         x = x[:pos] + 'android:id="@+id/votolTelemetryValue" ' + x[pos:]
-        layout_path.write_text(x)
+
+    # MotoMonitor-style dashboard refinement: keep the data/functionality, improve hierarchy.
+    x = x.replace('android:layout_width="270dp" android:layout_height="270dp" android:layout_marginTop="8dp"',
+                  'android:layout_width="250dp" android:layout_height="250dp" android:layout_marginTop="4dp"')
+    x = x.replace('<View android:layout_width="242dp" android:layout_height="242dp" android:layout_gravity="center" android:background="#070B0F" />', '')
+    x = x.replace('android:textSize="72sp" android:textStyle="bold"', 'android:textSize="64sp" android:textStyle="bold"', 1)
+    x = x.replace('android:layout_height="92dp" android:layout_marginTop="8dp" android:background="#080D13"',
+                  'android:layout_height="52dp" android:layout_marginTop="6dp" android:background="#080D13"')
+    x = x.replace('android:layout_height="155dp" android:layout_weight="1"',
+                  'android:layout_height="132dp" android:layout_weight="1"')
+    # Device lists remain functional through their buttons/pickers, but don't dominate the dashboard.
+    for marker_id in ('votolDevices', 'jkDevices'):
+        token = f'android:id="@+id/{marker_id}"'
+        pos = x.find(token)
+        if pos >= 0:
+            end_tag = x.find('>', pos)
+            tag = x[pos:end_tag]
+            if 'android:visibility=' not in tag:
+                x = x[:pos] + tag + ' android:visibility="gone"' + x[end_tag:]
+    layout_path.write_text(x)
 print('VOTOL DASHBOARD PATCHED')
