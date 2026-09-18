@@ -63,7 +63,7 @@ block = '''    private val votolPollHandler = Handler(Looper.getMainLooper())
         votolRxBuffer.addAll(data.toList())
         while (true) {
             var start = -1
-            for (i in 0..(votolRxBuffer.size - 1)) {
+            for (i in 0 until votolRxBuffer.size) {
                 val b = votolRxBuffer[i].toInt() and 0xFF
                 if (b == 0xC0 || b == 0xC9) { start = i; break }
             }
@@ -121,26 +121,18 @@ block = '''    private val votolPollHandler = Handler(Looper.getMainLooper())
 '''
 main.write_text(s[:start] + block + s[end:])
 
-for layout_path in [
-    Path('app/src/main/res/layout/activity_main.xml'),
-    Path('app/src/main/res/layout-land/activity_main.xml'),
-]:
+for layout_path in [Path('app/src/main/res/layout/activity_main.xml'), Path('app/src/main/res/layout-land/activity_main.xml')]:
     x = layout_path.read_text()
     if 'android:id="@+id/votolTelemetryValue"' not in x:
         marker = 'android:fontFamily="monospace" android:text="Motor RPM'
         if marker not in x:
             raise SystemExit(f'VOTOL telemetry TextView not found in {layout_path}')
         x = x.replace(marker, 'android:id="@+id/votolTelemetryValue" ' + marker, 1)
-
-    x = x.replace('android:layout_width="270dp" android:layout_height="270dp" android:layout_marginTop="8dp"',
-                  'android:layout_width="250dp" android:layout_height="250dp" android:layout_marginTop="4dp"')
+    x = x.replace('android:layout_width="270dp" android:layout_height="270dp" android:layout_marginTop="8dp"', 'android:layout_width="250dp" android:layout_height="250dp" android:layout_marginTop="4dp"')
     x = x.replace('<View android:layout_width="242dp" android:layout_height="242dp" android:layout_gravity="center" android:background="#070B0F" />', '')
     x = x.replace('android:textSize="72sp" android:textStyle="bold"', 'android:textSize="64sp" android:textStyle="bold"', 1)
-    x = x.replace('android:layout_height="92dp" android:layout_marginTop="8dp" android:background="#080D13"',
-                  'android:layout_height="52dp" android:layout_marginTop="6dp" android:background="#080D13"')
-    x = x.replace('android:layout_height="155dp" android:layout_weight="1"',
-                  'android:layout_height="132dp" android:layout_weight="1"')
-
+    x = x.replace('android:layout_height="92dp" android:layout_marginTop="8dp" android:background="#080D13"', 'android:layout_height="52dp" android:layout_marginTop="6dp" android:background="#080D13"')
+    x = x.replace('android:layout_height="155dp" android:layout_weight="1"', 'android:layout_height="132dp" android:layout_weight="1"')
     try:
         ET.fromstring(x)
     except ET.ParseError as exc:
