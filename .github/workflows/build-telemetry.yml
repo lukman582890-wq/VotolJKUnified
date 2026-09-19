@@ -3,7 +3,8 @@ name: Build Telemetry APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
@@ -11,26 +12,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Setup Android
+
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: ''
-      - name: Install Android SDK
-        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
       - name: Patch MainActivity telemetry
+        shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('app/src/main/java/com/votoljk/unified/MainActivity.kt')
-          s=p.read_text()
-          start=s.index('    private fun connectVotol')
-          end=s.index('    private var scanner:', start)
-          block=r'''    private val votolPollHandler = Handler(Looper.getMainLooper())
+
+          p = Path('app/src/main/java/com/votoljk/unified/MainActivity.kt')
+          s = p.read_text()
+          start = s.index('    private fun connectVotol')
+          end = s.index('    private var scanner:', start)
+          block = r'''    private val votolPollHandler = Handler(Looper.getMainLooper())
 
     private fun connectVotol(d: BluetoothDevice) {
         Thread {
@@ -85,23 +90,27 @@ jobs:
     }
 
 '''
-          p.write_text(s[:start]+block+s[end:])
-          q=Path('app/src/main/res/layout/activity_main.xml')
-          x=q.read_text()
-          old='android:text="Motor RPM\n0\n\nPhase Current\n0.0 A\n\nThrottle\n0 %"'
-          new='android:id="@+id/votolTelemetryValue" android:text="Motor RPM    --\nController  -- V / -- A / -- W\nStatus      --\nFault       --"'
+          p.write_text(s[:start] + block + s[end:])
+
+          q = Path('app/src/main/res/layout/activity_main.xml')
+          x = q.read_text()
+          old = 'android:text="Motor RPM\n0\n\nPhase Current\n0.0 A\n\nThrottle\n0 %"'
+          new = 'android:id="@+id/votolTelemetryValue" android:text="Motor RPM    --\nController  -- V / -- A / -- W\nStatus      --\nFault       --"'
           if old in x:
-              x=x.replace(old,new,1)
+              x = x.replace(old, new, 1)
           elif 'android:id="@+id/votolTelemetryValue"' not in x:
               raise SystemExit('telemetry UI block not found and votolTelemetryValue is not already present')
           q.write_text(x)
           PY
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+
       - name: Build APK
         run: gradle assembleDebug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
