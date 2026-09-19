@@ -90,8 +90,11 @@ jobs:
           x=q.read_text()
           old='android:text="Motor RPM\n0\n\nPhase Current\n0.0 A\n\nThrottle\n0 %"'
           new='android:id="@+id/votolTelemetryValue" android:text="Motor RPM    --\nController  -- V / -- A / -- W\nStatus      --\nFault       --"'
-          assert old in x, 'telemetry UI block not found'
-          q.write_text(x.replace(old,new,1))
+          if old in x:
+              x=x.replace(old,new,1)
+          elif 'android:id="@+id/votolTelemetryValue"' not in x:
+              raise SystemExit('telemetry UI block not found and votolTelemetryValue is not already present')
+          q.write_text(x)
           PY
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
